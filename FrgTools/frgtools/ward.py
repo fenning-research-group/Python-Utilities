@@ -3,6 +3,7 @@ from scipy.signal import savgol_filter
 from math import ceil
 import matplotlib.pyplot as plt
 from scipy import ndimage as nd
+import imreg_dft as ird
 
 def FullSpectrumFit(wavelengths, reflectance, plot = False):
 	eva_peak = 1730
@@ -31,6 +32,8 @@ def FullSpectrumFit(wavelengths, reflectance, plot = False):
 		fig, ax = plt.subplots(1,2, figsize = (8,3))
 
 		ax[0].plot(wavelengths, absSpectrum, label = 'Raw')
+		ax[0].plot(wavelengths, absBaseline, label = 'Baseline')
+		ax[0].legend()
 		ax[0].set_xlabel('Wavelengths (nm)')
 		ax[0].set_ylabel('Absorbance (AU)')
 
