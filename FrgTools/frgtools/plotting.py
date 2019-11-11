@@ -1,6 +1,38 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
+from matplotlib_scalebar.scalebar import ScaleBar
+
+
+def Scalebar(ax = None, scale = 1, **kwargs):
+	"""
+	Lightweight wrapper around matplotlib_scalebar.scalebar.ScaleBar
+	Default positioning and text color (white text on low opacity black background in lower right corner)
+	
+	Two typically used parameters
+		ax: defaults to current matplotlib axes
+		scale: defaults to 1. Should hold the SI unit scale (ie for units in microns, scale = 1e-6, for units in km, scale = 1e3, etc.)
+	All other parameters for ScaleBar can be passed as keyword arguments
+
+	"""
+	scalebarArguments = {
+		'location': 'lower right',
+		'box_color': [0,0,0],
+		'box_alpha': 0.2,
+		'color': [1,1,1],
+		'pad': 0.05
+	}
+
+	for k, v in kwargs.items():
+		scalebarArguments[k] = v
+
+	if ax is None:
+		ax = plt.gca()
+	sb = ScaleBar(
+			dx = scale,
+			**scalebarArguments
+		)
+	ax.add_artist(sb)
 
 def CategoricalHeatmap(x, y, z, ax = None, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean'):
 	"""

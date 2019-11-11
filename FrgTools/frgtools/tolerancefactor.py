@@ -8,6 +8,9 @@ _radiiDatabaseFilepath = os.path.join(rootDir, 'Include', 'atomicradii.json')
 with open(_radiiDatabaseFilepath, 'r') as f:
 	_radiiDatabase = json.load(f)
 
+
+### Tolerance factor calculations ###
+
 def GoldschmidtTF(a, b, x):
 	r_a = _ParseAtomicRadius(a)
 	r_b = _ParseAtomicRadius(b)
@@ -30,6 +33,25 @@ def ChathamFormability(a, b, x, oxidationstate_a = 1):
 	tau = (r_x/r_b) - oxidationstate_a*(oxidationstate_a - (r_a/r_b)/np.log(r_a/r_b))
 	
 	return fsigmoid(tau, *p_opt)
+
+
+### Atomic radius handling ###
+
+def AddAtomicRadius(name, radius):
+	if radius < 0.5 or radius > 5:
+		response = input('{0} provided as radius for {1} - is this the correct value in Angstroms? (y/n):'.format(radius, name))
+		if str.lower(response) != 'y':
+			return
+
+	if name in _radiiDatabase.keys():
+		currentRadius = _LookUpAtomicRadius(name)
+		response = input('{0} already in database with radius {1} A. Overwrite with radius {2} A? (y/n): '.format(name, currentRadius, radius))
+		if str.lower(response) != 'y':
+			return
+
+	_radiiDatabase[name] = radius
+	with open(_radiiDatabaseFilepath, 'w') as f:
+		json.dump(_radiiDatabase, f)
 
 def _LookUpAtomicRadius(key):
 	try:
@@ -54,19 +76,3 @@ def _ParseAtomicRadius(raw):
 		radius = raw
 
 	return radius
-
-def AddAtomicRadius(name, radius):
-	if radius < 0.5 or radius > 5:
-		response = input('{0} provided as radius for {1} - is this the correct value in Angstroms? (y/n):'.format(radius, name))
-		if str.lower(response) != 'y':
-			return
-
-	if name in _radiiDatabase.keys():
-		currentRadius = _LookUpAtomicRadius(name)
-		response = input('{0} already in database with radius {1} A. Overwrite with radius {2} A? (y/n): '.format(name, currentRadius, radius))
-		if str.lower(response) != 'y':
-			return
-
-	_radiiDatabase[name] = radius
-	with open(_radiiDatabaseFilepath, 'w') as f:
-		json.dump(_radiiDatabase, f)
