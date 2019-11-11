@@ -8,7 +8,7 @@ def Scalebar(ax = None, scale = 1, **kwargs):
 	"""
 	Lightweight wrapper around matplotlib_scalebar.scalebar.ScaleBar
 	Default positioning and text color (white text on low opacity black background in lower right corner)
-	
+
 	Two typically used parameters
 		ax: defaults to current matplotlib axes
 		scale: defaults to 1. Should hold the SI unit scale (ie for units in microns, scale = 1e-6, for units in km, scale = 1e3, etc.)
@@ -33,7 +33,8 @@ def Scalebar(ax = None, scale = 1, **kwargs):
 			**scalebarArguments
 		)
 	ax.add_artist(sb)
-
+	return sb
+	
 def CategoricalHeatmap(x, y, z, ax = None, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean'):
 	"""
 	Takes three 1-d inputs (x, y, z) and constructs an x by y heatmap with values z.
