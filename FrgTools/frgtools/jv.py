@@ -55,6 +55,84 @@ def LoadTracer(fpath):
 	
 	return data
 
+def LoadFRG(fpath):
+
+	def readFRGFile(fpath):
+		data = {}
+
+		with open(fpath, 'r') as f:
+			ReadingHeader = True 	#check when header has been fully parsed
+			BothDirections = False	#sweep forward + reverse
+
+			while ReadingHeader:	
+				line = f.readline()
+				lineparts = line.split(':')
+
+				if 'Data' in lineparts[0]:
+					ReadingHeader = False
+					f.readline()
+					f.readline()
+				else:
+					try:
+						data[lineparts[0]] = float(lineparts[1])
+					except:
+						data[lineparts[0]] = lineparts[1][1:].replace('\n', '')
+
+
+			vforward = []
+			iforward = []
+			timeforward = []			
+			if data['sweepDir'] == 'Forward + Reverse':
+				BothDirections = True
+				vreverse = []
+				ireverse = []
+				timereverse = []
+
+			for line in f:
+				lineparts = f.readline().split('\t')
+				if len(lineparts) == 1:
+					break
+				vforward.append(lineparts[0])	
+				iforward.append(lineparts[1])
+				timeforward.append(lineparts[2])
+				if BothDirections:
+					vreverse.append(lineparts[0])	
+					ireverse.append(lineparts[1])
+					timereverse.append(lineparts[2])
+
+			data['V'] = np.array(vforward).astype(float)
+			data['I'] = np.array(iforward).astype(float)
+			data['J'] = data['I']/data['area_cm2']
+			data['delay'] = np.array(timeforward).astype(float)
+
+			if BothDirections:
+				data2 = data.copy()
+				data2['sampleName'] = data['sampleName'] + '_Reverse'
+				data['sampleName'] = data['sampleName'] + '_Forward'
+				data2['V'] = np.array(vreverse).astype(float)
+				data2['I'] = np.array(ireverse).astype(float)
+				data2['J'] = data2['I']/data2['area_cm2']
+				data2['delay'] = np.array(timereverse).astype(float)
+				output = [data, data2]
+			else:
+				output = data
+
+		return output
+
+
+
+	fids = [os.path.join(fpath, x) for x in os.listdir(fpath)]
+	
+	alldata = {}
+	for f in fids:
+		output = readFRGFile(f)
+		if type(output) == list:
+			for each in output:
+				alldata[each['sampleName']] = each
+		else:
+			alldata[output['sampleName']] = output
+	return alldata
+
 def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 5000):
 	"""
 	Takes inputs of voltage (V), measured current (A), and cell area (cm2)
@@ -193,34 +271,25 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 	p = np.multiply(v, j)
 	x = np.vstack((v,j))
 	
-	init_guess_ = [1e-12, 1e-12, 2, 1e3, 35e-3] #jo1, jo2, rs, rsh, jl
-	for key, val in init_guess.items():
-		if key == 'jo1':
-			init_guess_[0] = val
-		elif key == 'jo2':
-			init_guess_[1] = val
-		elif key == 'rs':
-			init_guess_[2] = val
-		elif key == 'rsh':
-			init_guess_[3] = val
-
-	bounds_=[[0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf]]
-	for key, vals in bounds.items():
-		if key == 'jo1':
-			bounds_[0][0] = vals[0]
-			bounds_[1][0] = vals[1]
-		elif key == 'jo2':
-			bounds_[0][1] = vals[0]
-			bounds_[1][1] = vals[1]
-		elif key == 'rs':
-			bounds_[0][2] = vals[0]
-			bounds_[1][2] = vals[1]
-		elif key == 'rsh':
-			bounds_[0][3] = vals[0]
-			bounds_[1][3] = vals[1]
+	jsc = j[np.argmin(np.abs(v))]
 
 	if diodes == 2:
-		best_vals, covar = curve_fit(_Light2Diode, x, x[1,:], p0 = init_guess_, maxfev = maxfev, bounds = bounds)
+		init_guess_ = [1e-12, 1e-12, 2, 1e3, jsc] #jo1, jo2, rs, rsh, jl
+		for key, val in init_guess.items():
+			for idx, choices in enumerate([['jo1', 'j01'], ['jo2', 'j02'], ['rs', 'rseries'], ['rsh', 'rshunt'], ['jl', 'jill', 'jilluminated']]):
+				if str.lower(key) in choices:
+					init_guess_[idx] = val
+					break
+
+		bounds_=[[0, 0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf, np.inf]]
+		for key, vals in bounds.items():
+			for idx, choices in enumerate([['jo1', 'j01'], ['jo2', 'j02'], ['rs', 'rseries'], ['rsh', 'rshunt'], ['jl', 'jill', 'jilluminated']]):
+				if str.lower(key) in choices:
+					bounds_[0][idx] = vals[0]
+					bounds_[1][idx] = vals[1]
+					break
+
+		best_vals, covar = curve_fit(_Light2Diode, x, x[1,:], p0 = init_guess_, maxfev = maxfev, bounds = bounds_)
 		
 		results = {
 			'jo1': best_vals[0],
@@ -231,9 +300,24 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 			'covar': covar
 		}
 		results['jfit'] = _Light2Diode(x, results['jo1'], results['jo2'], results['rs'], results['rsh'], results['jl'])
-
+	
 	elif diodes == 1:
-		best_vals, covar = curve_fit(light1diode, x, x[1,:], p0 = init_guess_, maxfev=5000, bounds = bounds)
+		init_guess_ = [1e-12, 2, 1e3, jsc] #jo1, rs, rsh, jl
+		for key, val in init_guess.items():
+			for idx, choices in enumerate([['jo1', 'j01'], ['rs', 'rseries'], ['rsh', 'rshunt'], ['jl', 'jill', 'jilluminated']]):
+				if str.lower(key) in choices:
+					init_guess_[idx] = val
+					break
+					
+		bounds_=[[0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf]]
+		for key, vals in bounds.items():
+			for idx, choices in enumerate([['jo1', 'j01'], ['rs', 'rseries'], ['rsh', 'rshunt'], ['jl', 'jill', 'jilluminated']]):
+				if str.lower(key) in choices:
+					bounds_[0][idx] = vals[0]
+					bounds_[1][idx] = vals[1]
+					break
+	
+		best_vals, covar = curve_fit(_Light1Diode, x, x[1,:], p0 = init_guess_, maxfev = maxfev, bounds = bounds_)
 		
 		results = {
 			'jo1': best_vals[0],
@@ -242,10 +326,12 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 			'jl': best_vals[3],
 			'covar': covar
 		}
-		results['jfit'] = _Light2Diode(x, results['jo1'], results['rs'], results['rsh'], results['jl'])
+		results['jfit'] = _Light1Diode(x, results['jo1'], results['rs'], results['rsh'], results['jl'])
 	else:
 		print('Error: Invalid number of diodes requested for fitting. Diode must equal 1 or 2. User provided {0}. Diode equation not fit.'.format(diodes))
 		results = {}
+
+
 
 	if plot and len(results) > 0:
 		fig, ax = plt.subplots()
