@@ -5,7 +5,7 @@ from PIL import Image
 
 ## Affine transformation scripts
 
-def AffineTransform(img, T, resample = Image.NEAREST, plot = False):
+def AffineTransform(img, T, resample = Image.NEAREST, plot = False, **kwargs):
 	"""
 	Performs an affine transformation on an array image, returns the transformed array
 
@@ -36,12 +36,13 @@ def AffineTransform(img, T, resample = Image.NEAREST, plot = False):
 	    data = T_inv.flatten()[:6],
 	    resample = resample
 	)
-
+	img_t = np.array(img_t)
+	
 	if plot:
 		fig, ax = plt.subplots(1,2)
-		ax[0].imshow(img)
+		ax[0].imshow(img, **kwargs)
 		ax[0].set_title('Original')
-		ax[1].imshow(img_t)
+		ax[1].imshow(img_t, **kwargs)
 		ax[1].set_title('Transformed')
 		plt.show()
 
@@ -62,20 +63,20 @@ def AffineCalculate(p1, p2):
 	p1 = np.hstack((p1, np.ones((p1.shape[0], 1))))
 	p2 = np.hstack((p2, np.ones((p2.shape[0], 1))))
 
-	T, _, _, _ = np.linalg.lstsq(p1, p2)
+	T, _, _, _ = np.linalg.lstsq(p1, p2, rcond = None)
 	T[2, :2] = [0,0]
 
 	return T
 
 class __ImgPicker():
-		def __init__(self, img, pts, markersize = 0.3):
+		def __init__(self, img, pts, markersize = 0.3, **kwargs):
 			self.numPoints = pts
 			self.currentPoint = 0
 			self.finished = False
 			self.markersize = markersize
 
 			self.fig, self.ax = plt.subplots()
-			self.ax.imshow(img, picker = True)
+			self.ax.imshow(img, picker = True, **kwargs)
 			self.fig.canvas.mpl_connect('pick_event', self.onpick)
 
 			self.buttonAx = plt.axes([0.4, 0, 0.1, 0.075])
@@ -116,6 +117,10 @@ class __ImgPicker():
 				self.fig.canvas.draw()
 				self.fig.canvas.flush_events()
 
-def ImagePointPicker(img, pts = 4):
-	imgpicker = _ImgPicker(img, pts)
+def ImagePointPicker(img, pts = 4, **kwargs):
+	"""
+	Given an image and a number of points, allows the user to interactively select points on the image.
+	These points are returned when the "Done" button is pressed. Useful to generate inputs for AffineCalculate.
+	"""
+	imgpicker = __ImgPicker(img, pts, **kwargs)
 	return imgpicker.pickedPoints
