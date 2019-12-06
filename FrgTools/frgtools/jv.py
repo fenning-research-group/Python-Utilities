@@ -220,7 +220,7 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 
 	Fits an illuminated JV curve to find at least the basic JV parameters:
 	Open-circuit voltage: Voc (V)
-	Short-circuit current: Jsc (A/cm2)
+	Short-circuit current: Jsc (mA/cm2)
 	Max power point voltage: Vmpp (V)
 
 	Fitting by 2-diode (default) or 1-diode model as specified by diodes argument provides additional parameters:
@@ -261,7 +261,7 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 		
 		return j
 
-	j = [i_/area for i_ in i]
+	j = [i_*1000/area for i_ in i]	#convert A to mA
 	
 	if max(j) > 0.05:
 		print('Current seems too high (max = {0} mA/cm2). Please double check that your area (cm2) and measured current (A) are correct.'.format(max(j)))
@@ -344,6 +344,7 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 	results['voc'] = v[np.argmin(np.abs(j))]
 	results['jsc'] = j[np.argmin(np.abs(v))]
 	results['vmpp'] = v[np.argmax(p)]
-	
+	results['pce'] = p.max()/100
+	results['ff'] = p.max() / (results['voc']*results['jsc'])	
 
 	return results
