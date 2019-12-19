@@ -214,7 +214,7 @@ def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 500
 	
 	return results
 
-def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {}, maxfev = 5000):
+def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {}, maxfev = 5000, type = None):
 	"""
 	Takes inputs of voltage (V), measured current (A), and cell area (cm2)
 
@@ -261,10 +261,10 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 		
 		return j
 
-	j = [i_*1000/area for i_ in i]	#convert A to mA
+	j = [i_/area for i_ in i]	#convert A to mA
 	
-	if max(j) > 0.05:
-		print('Current seems too high (max = {0} mA/cm2). Please double check that your area (cm2) and measured current (A) are correct.'.format(max(j)))
+	if max(j) > .05:
+		print('Current seems too high (max = {0} mA/cm2). Please double check that your area (cm2) and measured current (A) are correct.'.format(max(j*1000)))
 
 	v = np.asarray(v)
 	j = np.asarray(j)
@@ -289,6 +289,8 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 					bounds_[1][idx] = vals[1]
 					break
 
+		print(init_guess_)
+		print(bounds_)
 		best_vals, covar = curve_fit(_Light2Diode, x, x[1,:], p0 = init_guess_, maxfev = maxfev, bounds = bounds_)
 		
 		results = {
@@ -317,6 +319,8 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 					bounds_[1][idx] = vals[1]
 					break
 	
+		print(init_guess_)
+		print(bounds_)
 		best_vals, covar = curve_fit(_Light1Diode, x, x[1,:], p0 = init_guess_, maxfev = maxfev, bounds = bounds_)
 		
 		results = {
@@ -336,7 +340,11 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 	if plot and len(results) > 0:
 		fig, ax = plt.subplots()
 		ax.plot(v, j*1000, label = 'Measured')
+		xlim0 = ax.get_xlim()
+		ylim0 = ax.get_ylim()
 		ax.plot(v, results['jfit']*1000, linestyle = '--', label = 'Fit')
+		ax.set_xlim(xlim0)
+		ax.set_ylim(ylim0)
 		ax.set_xlabel('Voltage (V)')
 		ax.set_ylabel('Current Density (mA/cm2)')
 		plt.show()

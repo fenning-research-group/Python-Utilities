@@ -4,9 +4,9 @@ import numpy as np
 import os
 
 rootDir = os.path.dirname(__file__)
-_radiiDatabaseFilepath = os.path.join(rootDir, 'Include', 'atomicradii.json')
-with open(_radiiDatabaseFilepath, 'r') as f:
-	_radiiDatabase = json.load(f)
+radiiFilepath = os.path.join(rootDir, 'Include', 'atomicradii.json')
+with open(radiiFilepath, 'r') as f:
+	radii = json.load(f)
 
 
 ### Tolerance factor calculations ###
@@ -34,7 +34,6 @@ def ChathamFormability(a, b, x, oxidationstate_a = 1):
 	
 	return fsigmoid(tau, *p_opt)
 
-
 ### Atomic radius handling ###
 
 def AddAtomicRadius(name, radius):
@@ -43,19 +42,19 @@ def AddAtomicRadius(name, radius):
 		if str.lower(response) != 'y':
 			return
 
-	if name in _radiiDatabase.keys():
+	if name in radii.keys():
 		currentRadius = _LookUpAtomicRadius(name)
 		response = input('{0} already in database with radius {1} A. Overwrite with radius {2} A? (y/n): '.format(name, currentRadius, radius))
 		if str.lower(response) != 'y':
 			return
 
-	_radiiDatabase[name] = radius
-	with open(_radiiDatabaseFilepath, 'w') as f:
-		json.dump(_radiiDatabase, f)
+	radii[name] = radius
+	with open(radiiFilepath, 'w') as f:
+		json.dump(radii, f)
 
 def _LookUpAtomicRadius(key):
 	try:
-		radius = _radiiDatabase[key]
+		radius = radii[key]
 	except:
 		print('Error: {0} not included in atomic radii database. Please add using frgtools.tolerancefactor.AddAtomicRadius(name, radius).'.format(key))
 		radius = False
