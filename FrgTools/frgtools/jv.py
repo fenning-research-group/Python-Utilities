@@ -143,56 +143,40 @@ def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 500
 	Shunt resistance: Rsh (ohms)
 	"""
 
-	def _Dark2Diode(x, jo1, jo2, rs, rsh):
-		v = x[0]
-		j_meas = x[1]
-		
-		#constants
-		q = 1.60217662e-19 #coulombs
-		k = 1.380649e-23 #J/K
-		T = 298.15 #assume room temperature
 
-		#calculation
-		d1 = jo1 * np.exp((q*(v-(j_meas*rs)))/(k*T))
-		d2 = jo2 * np.exp((q*(v-(j_meas*rs)))/(2*k*T))
-		j = d1 + d2 + (v-(j_meas*rs))/rsh
-		
-		return j
 
-	j = [i[n]/area for n in range(len(v))]
-	
+	j = [i_/area for i_ in i]	
 	v = np.asarray(v)
 	j = np.asarray(j)
-	x = np.vstack((v,j))
-	   
-	init_guess_ = [1e-12, 1e-12, 1, 5e2] #jo1, jo2, rs, rsh, jl
+
+	n = [idx for idx, v_ in enumerate(v) if v_ >= 0]
+	vfit = v.copy()
+	jfit = j.copy()
+	# vfit = [v[n_] for n_ in n]
+	# jfit = [np.log(i[n_]/area) for n_ in n]
+	# jfit = [i[n_]/area for n_ in n]
+	vfit = np.asarray(vfit)
+	jfit = np.asarray(jfit)
+	x = np.vstack((vfit,jfit))
+	
+	xplot = np.vstack((v, j))
+
+	init_guess_ = [1e-12, 1e-12, 2, 1e3] #jo1, jo2, rs, rsh
 	for key, val in init_guess.items():
-		if key == 'jo1':
-			init_guess_[0] = val
-		elif key == 'jo2':
-			init_guess_[1] = val
-		elif key == 'rs':
-			init_guess_[2] = val
-		elif key == 'rsh':
-			init_guess_[3] = val
+		for idx, choices in enumerate([['jo1', 'j01'], ['jo2', 'j02'], ['rs', 'rseries'], ['rsh', 'rshunt']]):
+			if str.lower(key) in choices:
+				init_guess_[idx] = val
+				break
 
 	bounds_=[[0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf]]
-
 	for key, vals in bounds.items():
-		if key == 'jo1':
-			bounds_[0][0] = vals[0]
-			bounds_[1][0] = vals[1]
-		elif key == 'jo2':
-			bounds_[0][1] = vals[0]
-			bounds_[1][1] = vals[1]
-		elif key == 'rs':
-			bounds_[0][2] = vals[0]
-			bounds_[1][2] = vals[1]
-		elif key == 'rsh':
-			bounds_[0][3] = vals[0]
-			bounds_[1][3] = vals[1]
+		for idx, choices in enumerate([['jo1', 'j01'], ['jo2', 'j02'], ['rs', 'rseries'], ['rsh', 'rshunt']]):
+			if str.lower(key) in choices:
+				bounds_[0][idx] = vals[0]
+				bounds_[1][idx] = vals[1]
+				break
 
-	best_vals, covar = curve_fit(_Dark2Diode, x, x[1,:], p0 = init_guess_, bounds = bounds_, maxfev = maxfev)
+	best_vals, covar = curve_fit(_Dark2Diode, x, x[1,:], p0 = init_guess_, bounds = bounds_, maxfev = maxfev, method = 'dogbox')
 	
 	results = {
 		'jo1': best_vals[0],
@@ -200,16 +184,16 @@ def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 500
 		'rs': best_vals[2],
 		'rsh': best_vals[3],
 		'covar': covar,
-		'jfit': _Dark2Diode(x, best_vals[0], best_vals[1], best_vals[2], best_vals[3])
+		'jfit': _Dark2Diode(xplot, best_vals[0], best_vals[1], best_vals[2], best_vals[3], exp = False)
 	}
 
 	
 	if plot:
 		fig, ax = plt.subplots()
-		ax.plot(v, j*1000, label = 'Measured')
-		ax.plot(v, results['jfit']*1000, linestyle = '--', label = 'Fit')
+		ax.plot(v, np.log(j*1000), label = 'Measured')
+		ax.plot(v, np.log(results['jfit']*1000), linestyle = '--', label = 'Fit')
 		ax.set_xlabel('Voltage (V)')
-		ax.set_ylabel('Current Density (mA/cm2)')
+		ax.set_ylabel('log(Current Density) (mA/cm2)')
 		plt.show()
 	
 	return results
@@ -230,36 +214,7 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 	Photogenerated current: Jl (A/cm2)
 	"""
 
-	def _Light2Diode(x, jo1, jo2, rs, rsh, jl):
-		v = x[0]
-		j_meas = x[1]
-		
-		#constants
-		q = 1.60217662e-19 #coulombs
-		k = 1.380649e-23 #J/K
-		T = 298.15 #assume room temperature
 
-		#calculation
-		d1 = jo1 * np.exp((q*(v+(j_meas*rs)))/(k*T))
-		d2 = jo2 * np.exp((q*(v+(j_meas*rs)))/(2*k*T))
-		j = jl - d1 - d2 - (v+j_meas*rs)/rsh
-		
-		return j
-
-	def _Light1Diode(x, jo1, rs, rsh, jl):
-		v = x[0]
-		j_meas = x[1]
-		
-		#constants
-		q = 1.60217662e-19 #coulombs
-		k = 1.380649e-23 #J/K
-		T = 298.15 #assume room temperature
-
-		#calculation
-		d1 = jo1 * np.exp((q*(v+(j_meas*rs)))/(k*T))
-		j = jl - d1 - (v+j_meas*rs)/rsh
-		
-		return j
 
 	j = [i_/area for i_ in i]	#convert A to mA
 	
@@ -268,6 +223,12 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 
 	v = np.asarray(v)
 	j = np.asarray(j)
+
+	j = j[v >= 0]
+	v = v[v >= 0]
+	v = v[j >= 0]
+	j = j[j >= 0]
+	
 	p = np.multiply(v, j)
 	x = np.vstack((v,j))
 	
@@ -281,7 +242,7 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 					init_guess_[idx] = val
 					break
 
-		bounds_=[[0, 0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf, np.inf]]
+		bounds_=[[0, 0, 0, 0, jsc*0.9], [np.inf, np.inf, np.inf, np.inf, jsc*1.1]]
 		for key, vals in bounds.items():
 			for idx, choices in enumerate([['jo1', 'j01'], ['jo2', 'j02'], ['rs', 'rseries'], ['rsh', 'rshunt'], ['jl', 'jill', 'jilluminated']]):
 				if str.lower(key) in choices:
@@ -289,9 +250,7 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 					bounds_[1][idx] = vals[1]
 					break
 
-		print(init_guess_)
-		print(bounds_)
-		best_vals, covar = curve_fit(_Light2Diode, x, x[1,:], p0 = init_guess_, maxfev = maxfev, bounds = bounds_)
+		best_vals, covar = curve_fit(_Light2Diode, x, x[1,:], p0 = init_guess_, maxfev = maxfev, bounds = bounds_, method = 'trf')
 		
 		results = {
 			'jo1': best_vals[0],
@@ -352,7 +311,63 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 	results['voc'] = v[np.argmin(np.abs(j))]
 	results['jsc'] = j[np.argmin(np.abs(v))]
 	results['vmpp'] = v[np.argmax(p)]
-	results['pce'] = p.max()/100
+	results['pce'] = p.max()*10
 	results['ff'] = p.max() / (results['voc']*results['jsc'])	
 
 	return results
+
+
+### Diode Models
+
+def _Dark2Diode(x, jo1, jo2, rs, rsh, exp = False):
+	v = x[0]
+	if exp:
+		j_meas = np.exp(x[1])
+	else:
+		j_meas = x[1]
+	
+	#constants
+	q = 1.60217662e-19 #coulombs
+	k = 1.380649e-23 #J/K
+	T = 298.15 #assume room temperature
+
+	#calculation
+	d1 = jo1 * np.exp((q*(v-(j_meas*rs)))/(k*T))
+	d2 = jo2 * np.exp((q*(v-(j_meas*rs)))/(2*k*T))
+	j = d1 + d2 + (v-(j_meas*rs))/rsh
+	
+	if exp:
+		return np.log(j)
+	else:
+		return j
+
+def _Light2Diode(x, jo1, jo2, rs, rsh, jl):
+	v = x[0]
+	j_meas = x[1]
+	
+	#constants
+	q = 1.60217662e-19 #coulombs
+	k = 1.380649e-23 #J/K
+	T = 298.15 #assume room temperature
+
+	#calculation
+	d1 = jo1 * np.exp((q*(v+(j_meas*rs)))/(k*T))
+	d2 = jo2 * np.exp((q*(v+(j_meas*rs)))/(2*k*T))
+	j = jl - d1 - d2 - (v+j_meas*rs)/rsh
+	
+	return j
+
+def _Light1Diode(x, jo1, rs, rsh, jl):
+	v = x[0]
+	j_meas = x[1]
+	
+	#constants
+	q = 1.60217662e-19 #coulombs
+	k = 1.380649e-23 #J/K
+	T = 298.15 #assume room temperature
+
+	#calculation
+	d1 = jo1 * np.exp((q*(v+(j_meas*rs)))/(k*T))
+	j = jl - d1 - (v+j_meas*rs)/rsh
+	
+	return j

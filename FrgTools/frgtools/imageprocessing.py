@@ -5,27 +5,44 @@ from PIL import Image
 
 ## Affine transformation scripts
 
-def AffineTransform(img, T, resample = Image.NEAREST, plot = False, **kwargs):
+def AffineTransform(img, T, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
 	"""
 	Performs an affine transformation on an array image, returns the transformed array
 
 	img: Takes an input image in numpy array format
 	T: 3x3 Affine transformation matrix in numpy array format
 	resample: PIL resampling method
+	plot: if True, displays original + transformed images side by side
+	adjustcenterofrotation: Certain transformation matrices assume rotation from 0,0, others assume center of image. If 
+		transformation matrix assumes rotation axis in center of image, set adjustcenterofrotation = True
 	"""
 	img_ = Image.fromarray(img)
 
-	t_translate = np.array([		#move (0,0) to center of image instead of corner
-	    [1, 0, -img_.size[0]/2],
-	    [0, 1, -img_.size[1]/2],
-	    [0,0,1]
-	])
 
-	t_translate_back = np.array([	#move (0,0) to back to corner
-	    [1, 0, img_.size[0]/2],
-	    [0, 1, img_.size[1]/2],
-	    [0,0,1]
-	])
+	if adjustcenterofrotation:
+		t_translate = np.array([		#move (0,0) to center of image instead of corner
+		    [1, 0, -img_.size[0]/2],
+		    [0, 1, -img_.size[1]/2],
+		    [0,0,1]
+		])
+
+		t_translate_back = np.array([	#move (0,0) to back to corner
+		    [1, 0, img_.size[0]/2],
+		    [0, 1, img_.size[1]/2],
+		    [0,0,1]
+		])
+	else:
+		t_translate = np.array([
+			[1,0,0],
+			[0,1,0],
+			[0,0,1]
+			])
+
+		t_translate_back = np.array([
+			[1,0,0],
+			[0,1,0],
+			[0,0,1]
+			])
 
 	T_composite = t_translate_back @ T @ t_translate
 	T_inv = np.linalg.inv(T_composite)
