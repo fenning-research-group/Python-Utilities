@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
-from matplotlib_scalebar.scalebar import ScaleBar
+from matplotlib_scalebar.scalebar import ScaleBar as mplsb
 
 
 def Scalebar(ax = None, scale = 1, **kwargs):
@@ -28,7 +28,7 @@ def Scalebar(ax = None, scale = 1, **kwargs):
 
 	if ax is None:
 		ax = plt.gca()
-	sb = ScaleBar(
+	sb = mplsb(
 			dx = scale,
 			**scalebarArguments
 		)
