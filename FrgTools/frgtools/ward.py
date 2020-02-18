@@ -1,9 +1,8 @@
 import numpy as np
-from scipy.signal import savgol_filter
-from math import ceil
 import matplotlib.pyplot as plt
 from scipy import ndimage as nd
 import imreg_dft as ird
+from .curveprocessing import RemoveBaseline
 
 def FullSpectrumFit(wavelengths, reflectance, plot = False):
 	eva_peak = 1730
@@ -15,7 +14,7 @@ def FullSpectrumFit(wavelengths, reflectance, plot = False):
 		reflectance = reflectance / 100
 
 	absSpectrum = -np.log(reflectance)
-	absPeaks, absBaseline = _RemoveBaseline(absSpectrum)
+	absPeaks, absBaseline = RemoveBaseline(absSpectrum)
 
 	eva_idx = np.argmin(np.abs(wavelengths - eva_peak))
 	eva_abs = np.max(absPeaks[eva_idx-5 : eva_idx+5])
@@ -107,6 +106,42 @@ def ThreePointFit(wavelengths, reflectance, celltype, plot = False):
 	# avgRef = np.mean(ref, axis = 2)
 	return h2o_meas
 
+def ExpectedWater(temperature, relhum, material = 'EVA9100'):
+	material = str.lower(material)
+	if 'eva' in material:
+		if 'hum' in material:
+			"""
+			ASU EVA water saturation fit on 2019-02-27, using damp heat data only
+			Not very confident in this fit
+			"""
+			a = 0.7949
+			b = -1968		
+		elif 'kempe' in material:
+			"""
+			Kempe, M. D. (2005). Control of moisture ingress into photovoltaic modules. 
+			31st IEEE Photovoltaic Specialists Conference, (February), 503–506. 
+			https://doi.org/10.1109/PVSC.2005.1488180
+			"""
+			a = 2.677
+			b = -2141		
+		else:
+			"""
+			ASU EVA water saturation fit on 2019-01-29, using submerged samples
+			"""
+			a = 3.612
+			b = -2414
+	elif 'poe' in material:
+		a = 0.04898
+		b = -1415
+	else:
+		raise Exception('{} not a valid material.'.format(material))
+
+	tempArrh = 1/(273+temperature) #arrhenius temperature, 1/K
+	waterConcentration = a * np.exp(b * tempArrh) #water content, g/cm3
+	waterConcentration *= relhum/100 #scale by relative humidity, assuming Henrian behavior
+
+	return waterConcentration
+
 def ImputeWater(data, invalid = None):
 	"""
 	Replace the value of invalid 'data' cells (indicated by 'invalid') 
@@ -128,87 +163,3 @@ def ImputeWater(data, invalid = None):
 
 	ind = nd.distance_transform_edt(invalid, return_distances=False, return_indices=True)
 	return data[tuple(ind)]	
-
-def RegisterToDummy(start, start_ref = None):
-	#scale dummy mask with busbar oriented upper horizontal.
-
-	dummy = np.zeros(start.shape)
-	border = [np.round(x*2/53) for x in start.shape]
-	busbar = np.round(start.shape[0]*23/53)
-	dummy[border:-border, border:-border] = 0.05
-	dummy[busbar:busbar+border,:] = 1
-
-	if start_ref is None:
-		start_ref = start
-		
-	start_gauss = gaussian(start_ref, sigma = 0.5)
-	result = ird.similarity(
-		dummy,
-		start_gauss,
-		numiter = 30,
-		constraints = {
-			'angle': [0, 360],
-			'tx': [0, 2],
-			'ty': [0, 2],
-			'scale': [1, 0.02]
-		}
-	)
-	
-	start_reg = ird.transform_img(
-		start,
-		tvec = result['tvec'].round(4),
-		angle = result['angle'],
-		scale = result['scale']
-	)
-	
-	return start_reg
-
-def _RemoveBaseline(spectrum, sensitivity = 5):
-	def _PeakStripping(spectrum, window):
-		spectrum_smoothed = savgol_filter(spectrum, window, 0)
-		baseline = []
-
-		for s, ss in zip(spectrum, spectrum_smoothed):
-			baseline.append(min([s, ss]))
-
-		return np.array(baseline)
-
-	if sensitivity < 3:
-		sensitivity = 3
-
-	lp = ceil(0.5 * len(spectrum))
-	#pad spectrum at either end
-	spectrum_0 = np.hstack([
-			np.full((lp,), spectrum[0]),
-			spectrum,
-			np.full((lp,), spectrum[-1])
-		])
-	l2 = len(spectrum_0)
-
-	n = 1
-	nmax = len(spectrum)*0.9
-	foundMin = False
-	S = spectrum_0
-	A = []
-	baselines = []
-	while not foundMin:
-		n = n + 2
-		i = (n-1)/2
-		baseline = _PeakStripping(S, n)
-		A.append(np.trapz(S - baseline))
-		S = baseline
-		baselines.append(baseline)
-
-		if i > sensitivity:
-			if (A[-2] < A[-3]) and (A[-2] < A[-1]):
-				foundMin = True
-
-		if n > nmax:
-			foundMin = True
-
-	minIdx = np.argmin(A[sensitivity + 1:]) + sensitivity
-	baseline = baselines[minIdx][lp:-lp]
-	spectrum_corrected = spectrum - baseline
-
-	return spectrum_corrected, baseline
-
