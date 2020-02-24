@@ -1,13 +1,13 @@
 import os
 
 def listdir(path, display = True):
-    exclude = ['desktop.ini']
-    fids = [os.path.join(path, x) for x in os.listdir(path) if not any([exclude_ in x for exclude_ in exclude])]
-    if display:
-        print('Files in \'{}\':'.format(path))
-        for i, f in enumerate(fids):
-            print('{}:{}'.format(i, os.path.basename(f)))
-    return fids
+	exclude = ['desktop.ini']
+	fids = [os.path.join(path, x) for x in os.listdir(path) if not any([exclude_ in x for exclude_ in exclude])]
+	if display:
+		print('Files in \'{}\':'.format(path))
+		for i, f in enumerate(fids):
+			print('{}:{}'.format(i, os.path.basename(f)))
+	return fids
 
 
 
@@ -48,4 +48,5 @@ def gaussian(x, a, b, c):
 	b = center value
 	c = standard deviation
 	"""
-    return a * np.exp( -(x-b)**2 / (2*c**2))
+	return a * np.exp( -(x-b)**2 / (2*c**2))
+

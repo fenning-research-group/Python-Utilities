@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
 from matplotlib_scalebar.scalebar import ScaleBar as mplsb
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def Scalebar(ax = None, scale = 1, **kwargs):
 	"""
@@ -35,6 +35,25 @@ def Scalebar(ax = None, scale = 1, **kwargs):
 	ax.add_artist(sb)
 	return sb
 	
+def Colorbar(im, ax = None, orientation = 'vertical', **kwargs):
+	if ax is None:
+		ax = plt.gca()
+
+
+	colorbarArguments = {
+		'position': 'right',
+		'size': '5%',
+		'pad': 0.05
+	}
+	for k, v in kwargs.items():
+		colorbarArguments[k] = v
+
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes(**colorbarArguments)
+	cb = plt.colorbar(im, cax = cax, orientation = orientation)
+
+	return cb
+
 def CategoricalHeatmap(x, y, z, ax = None, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean'):
 	"""
 	Takes three 1-d inputs (x, y, z) and constructs an x by y heatmap with values z.
