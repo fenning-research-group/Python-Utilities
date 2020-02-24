@@ -107,6 +107,10 @@ def ThreePointFit(wavelengths, reflectance, celltype, plot = False):
 	return h2o_meas
 
 def ExpectedWater(temperature, relhum, material = 'EVA9100'):
+	"""
+	Given a temperature (C) and relative humidity (%), calculates the saturation water content in solar encapsulants
+	based on literature data or experiments carried out at Arizona State University as part of the PVRD2 project.
+	"""
 	material = str.lower(material)
 	if 'eva' in material:
 		if 'hum' in material:

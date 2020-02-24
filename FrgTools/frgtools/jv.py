@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 def LoadTracer(fpath):
+	"""
+	Loads JV scans taken by ReRa Tracer software. fpath must target a text file exported by right-clicking
+	scans in Tracer and selecting export.
+	"""
 	def skipLines(f, numLines):
 		for i in range(numLines):
 			f.readline()
@@ -56,7 +60,9 @@ def LoadTracer(fpath):
 	return data
 
 def LoadFRG(fpath):
-
+	"""
+	Loads JV data as exported by Grace's FRG MATLAB software in late 2019
+	"""
 	def readFRGFile(fpath):
 		data = {}
 
