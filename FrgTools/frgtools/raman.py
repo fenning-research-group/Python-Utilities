@@ -23,10 +23,10 @@ def LoadRenishaw(path, incident_wl):
     
     temp = np.loadtxt(fids[0])
     shift = temp[:,0]
-    wl = shift_to_nm(shift, incident_wl = incident_wl)
+    wl = ShiftToNm(shift, incident_wl = incident_wl)
     
     cts = np.zeros((len(y), len(x), len(wl)))
-    for f, x_, y_ in tqdm(zip(fids, allx, ally), total = len(fids)):
+    for f, x_, y_ in tqdm(zip(fids, allx, ally), total = len(fids), desc = 'Loading Renishaw Scans', leave = False):
         m = np.where(y == y_)
         n = np.where(x == x_)
         cts[m,n] = np.loadtxt(f)[:,1]    
@@ -44,5 +44,5 @@ def LoadRenishaw(path, incident_wl):
         'y': y,
         'extent': extent
     }
-    
+
     return results
