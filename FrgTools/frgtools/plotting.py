@@ -3,6 +3,8 @@ import numpy as np
 from matplotlib.collections import LineCollection
 from matplotlib_scalebar.scalebar import ScaleBar as mplsb
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.colors import LogNorm
+# from matplotlib import lines
 
 def Scalebar(ax = None, scale = 1, **kwargs):
 	"""
@@ -53,6 +55,62 @@ def Colorbar(im, ax = None, orientation = 'vertical', **kwargs):
 	cb = plt.colorbar(im, cax = cax, orientation = orientation)
 
 	return cb
+
+### Plot Builders
+
+def Waterfall(data, ax = None, lognorm = False, ticks = {}, tickoffset = 0, tickwidth = 1, **kwargs):
+	if ax == None:
+		fig, ax = plt.subplots(figsize = (8, 4))
+
+
+	defaultArgs = {
+		'cmap': plt.cm.inferno
+	}
+
+	for k, v in defaultArgs.items():
+		if k not in kwargs.keys():
+			kwargs[k] = v
+
+	if lognorm:
+		data[data <= 0] = np.nan
+		kwargs['norm'] = LogNorm(1, np.nanmax(data))
+
+
+	im = ax.imshow(
+		data, 
+		**kwargs
+		) 
+
+	ax.set_aspect('auto')
+	
+	cb = plt.colorbar(im, ax = ax, fraction = 0.03)
+	
+	if lognorm:
+		addonstr = ' (log)'
+	else:
+		addonstr = ''
+
+	cb.set_label('Counts{}'.format(addonstr))
+	
+
+	xleft, xright = ax.get_xlim()
+	ybot, ytop = ax.get_ylim()
+	ticksize = (ytop - ybot)/20
+
+	for idx, t in enumerate(ticks.items()):
+		label = t[0]
+		position = t[1]
+
+		c = plt.cm.tab10(idx)
+		ax.text(1.0, 0.6 - idx*0.05, label, color = c, transform = ax.figure.transFigure)        
+		for p in position:
+			if p <= xright and p >= xleft:
+				ax.plot([p, p], [ytop + (tickoffset*idx)*ticksize, ytop + (tickoffset*(idx) + 0.8) * ticksize], color = c, linewidth = tickwidth, clip_on = False)
+
+	ax.set_clip_on(False)
+	ax.set_ylim((0, ytop))
+	# plt.show()
+
 
 def CategoricalHeatmap(x, y, z, ax = None, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean'):
 	"""
