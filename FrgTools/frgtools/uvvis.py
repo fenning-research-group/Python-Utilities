@@ -36,7 +36,7 @@ def LoadLambda(fpath):
 			name = os.path.basename(f).split(readMe)[0]
 			if '.Cycle' in f:
 				cycle = os.path.basename(f).split('.Cycle')[-1].split('.Raw')[0]
-				name.append('_{}'.format(cycle))
+				name += '_{}'.format(cycle)
 			wl, signal, signalType = readLambdaCSV(path)
 
 			data[name] = {
