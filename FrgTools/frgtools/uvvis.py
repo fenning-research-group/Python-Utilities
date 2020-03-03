@@ -25,7 +25,7 @@ def LoadLambda(fpath):
 
 		return np.array(wl), np.array(signal), signalType
 
-	readMe = '.Sample.Raw.csv'
+	readMe = '.Sample.'
 	rawFids = os.listdir(fpath)
 
 	data = {}
@@ -34,6 +34,9 @@ def LoadLambda(fpath):
 		if readMe in f:
 			path = os.path.join(fpath, f)
 			name = os.path.basename(f).split(readMe)[0]
+			if '.Cycle' in f:
+				cycle = os.path.basename(f).split('.Cycle')[-1].split('.Raw')[0]
+				name.append('_{}'.format(cycle))
 			wl, signal, signalType = readLambdaCSV(path)
 
 			data[name] = {
