@@ -10,7 +10,16 @@ def listdir(path, display = True):
 	return fids
 
 def searchdir(path, find = [], ignore = ['desktop.ini'], fids = []):
-	f1s = [os.path.join(path, x) for x in os.listdir(path) if not any([y in x for y in ignore])]
+	"""
+	path: path to directory to be searched
+	find: list of substrings used to identify files of interest
+	ignore: list of substrings used to identify files/folders to ignore
+	fids: empty list to be populated with filepaths. should probably leave empty to start
+
+	Traverses all subdirectories of a given path and return files which contain strings included in "find".
+	Ignores files and folders that contain strings included in "ignore"
+	"""
+	f1s = [os.path.abspath(os.path.join(path, x)) for x in os.listdir(path) if not any([y in x for y in ignore])]
 	for f1 in f1s:
 		if os.path.isdir(f1):
 			fids = searchdir(f1, fids)
