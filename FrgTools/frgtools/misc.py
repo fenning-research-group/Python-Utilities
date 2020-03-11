@@ -1,7 +1,7 @@
 import os
 from tqdm import tqdm
 
-def listdir(path, display = True):
+def listdir(path = '.', display = True):
 	exclude = ['desktop.ini']
 	fids = [os.path.abspath(os.path.join(path, x)) for x in os.listdir(path) if not any([exclude_ in x for exclude_ in exclude])]
 	if display:
@@ -10,7 +10,7 @@ def listdir(path, display = True):
 			print('{}:{}'.format(i, os.path.basename(f)))
 	return fids
 
-def searchdir(path, find = [], ignore = ['desktop.ini'], fids = [], match_directories = False):
+def searchdir(path = '.', find = [], ignore = ['desktop.ini'], fids = [], match_directories = False):
 	"""
 	path: path to directory to be searched
 	find: list of substrings used to identify files of interest.
