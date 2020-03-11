@@ -9,7 +9,14 @@ def listdir(path, display = True):
 			print('{}:{}'.format(i, os.path.basename(f)))
 	return fids
 
-
+def searchdir(path, find = [], ignore = ['desktop.ini'], fids = []):
+	f1s = [os.path.join(path, x) for x in os.listdir(path) if not any([y in x for y in ignore])]
+	for f1 in f1s:
+		if os.path.isdir(f1):
+			fids = searchdir(f1, fids)
+		elif any([x in f1 for x in find]):
+			fids.append(f1)
+	return fids
 
 ### script to send email from generic FRG alert address
 import smtplib
