@@ -1,6 +1,14 @@
 setup.py
 frgtools/__init__.py
+frgtools/curveprocessing.py
+frgtools/ftir.py
+frgtools/imageprocessing.py
+frgtools/jv.py
+frgtools/misc.py
 frgtools/plotting.py
+frgtools/tolerancefactor.py
+frgtools/uvvis.py
+frgtools/ward.py
 frgtools.egg-info/PKG-INFO
 frgtools.egg-info/SOURCES.txt
 frgtools.egg-info/dependency_links.txt
