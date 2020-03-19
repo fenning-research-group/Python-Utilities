@@ -1,0 +1,42 @@
+TOPO(5x-- whole area scan)
+x = [-2650,22350]
+y = [-11600,13400]
+
+stepx = 1000 um
+step y = 1000 um
+
+Dwell Time: 0.10s
+Laser Power: 0.05
+Accumulations: 1
+
+Center: 2700 cm-1
+
+----------------------------------------
+
+Control(5x-- whole area scan)
+x = [-3400,21600]
+y = [-14000,11000]
+
+stepx = 1000 um
+step y = 1000 um
+
+Dwell Time: 0.10s
+Laser Power: 0.05
+Accumulations: 1
+
+Center: 2700 cm-1
+
+----------------------------------------
+
+TO(5x-- whole area scan)
+x = [-6000,19000]
+y = [-13000,12000]
+
+stepx = 1000 um
+step y = 1000 um
+
+Dwell Time: 0.10s
+Laser Power: 0.05
+Accumulations: 1
+
+Center: 2700 cm-1
