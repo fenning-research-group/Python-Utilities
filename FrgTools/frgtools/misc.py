@@ -57,7 +57,7 @@ def SendEmail(recipient, subject = '', body = ''):
 	msg = MIMEMultipart()
 	msg['From'] = senderAddress
 	msg['To'] = recipient
-	msg['Subject'] = '[frgMapper] ' + subject
+	msg['Subject'] = '[FRG-alert] ' + subject
 	body = body
 	msg.attach(MIMEText(body, 'plain'))
 
