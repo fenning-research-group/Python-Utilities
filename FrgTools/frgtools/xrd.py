@@ -1,9 +1,10 @@
 import numpy as np
+import os
 
 def LoadSmartlab(fpath):
     """
     Function to load XRD data from Rigaku Smartlab .RAS files.
-    
+
     heavy inspiration from https://github.com/Traecp/Rigaku-SmartLab - thanks!
     """
     RAS_HEADER_START = "*RAS_HEADER_START"
@@ -15,9 +16,9 @@ def LoadSmartlab(fpath):
     
     data = {}
     internal = {}
+    data['name'] = os.path.basename(fpath)[:-4] #remove .ras
     data['header'] = dict()
     data['counts'] = []
-    data['axis_names']  = dict() #{0: "TwoTheta", 1: "Omega", ...} use internal name
     internal['MEAS_COND_AXIS_NAME'] = dict() #Array
     internal['MEAS_COND_AXIS_NAME_INTERNAL'] = dict() #Array
     internal['MEAS_COND_AXIS_OFFSET'] = dict() #Array
