@@ -1,4 +1,4 @@
-EC-Lab ASCII FILE
+ E EC-Lab ASCII FILE
 Nb header lines : 54                          
 
 Cyclic Voltammetry

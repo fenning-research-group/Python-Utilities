@@ -6,6 +6,39 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import LogNorm
 # from matplotlib import lines
 
+def directionalplot(x,y, ax = None, arrowsize = 5, interval = None, color = None, line = True, **kwargs):
+    """
+    line plot with directional arrows overlaid.
+    interval: spacing between each arrow, in units of data indices
+    line: boolean - True = plots line + arrows, False = only plots arrows
+    arrowsize: size of the arrows, in figure units (5 is default)
+    """
+
+    if interval is None:
+        interval = round(len(x)/15)
+        
+    if ax is None:
+        ax = plt.gca()
+    xs = savgol_filter(x, 5, 1)
+    ys = savgol_filter(y, 5, 1)
+    if line:
+        newline = ax.plot(x,y,color = color, **kwargs)
+        color = newline[0].get_color()
+    for idx in range(0, len(x), interval):
+        ax.annotate(
+            s = '',
+            xytext = (xs[idx], ys[idx]),
+            xy = (xs[idx+1], ys[idx+1]),
+            color = plt.cm.tab10(0),
+            arrowprops = {
+#                 'arrowstyle':'simple',
+                'color': color,
+                'headwidth': arrowsize,
+                'headlength': arrowsize,
+            }
+        )
+
+
 def Scalebar(ax = None, scale = 1, **kwargs):
 	"""
 	Lightweight wrapper around matplotlib_scalebar.scalebar.ScaleBar
