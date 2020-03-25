@@ -202,6 +202,7 @@ def remove_background(x, y, peaks = None, peakwidth = None, window = None, plot 
             'corrected': y_corrected,
         }
 
+# def stackplot(df, )
 
 def bgRemove_deprecated(xdata,ydata,tol): # thank you: https://github.com/andrewrgarcia/XRDpy
     'approx. # points for half width of peaks'
