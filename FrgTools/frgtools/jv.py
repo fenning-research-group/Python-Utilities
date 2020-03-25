@@ -43,10 +43,8 @@ def load_tracer(fpath, reversefirst = True):
 		data['time'] = parseLine(f.readline(), 1 ,1)
 		skipLines(f, 4)
 		
-		data['v'] = [[] for x in range(len(data['curvetype']))]
-		data['i'] = [[] for x in range(len(data['curvetype']))]
-		data['p'] = [[] for x in range(len(data['curvetype']))]
-		data['j'] = [[] for x in range(len(data['curvetype']))]
+		for k in ['v','i','p','j']:
+			data[k] = [[] for x in range(len(data['curvetype']))]
 		
 		for line in f:
 			raw = parseLine(line, 0, 0)
@@ -59,6 +57,7 @@ def load_tracer(fpath, reversefirst = True):
 				except:
 					pass
 
+		#append scan direction
 		data['direction'] = []
 		for scanid in data['id']:
 			if scanid == '(2 of 2)':
@@ -71,6 +70,19 @@ def load_tracer(fpath, reversefirst = True):
 					data['direction'].append('reverse')
 				else:
 					data['direction'].append('forward')
+
+		#append basic jv parameters
+		basicparams = ['voc','jsc','ff','pce','vmpp']
+
+		for k in basicparams:
+			data[k] = []
+		for i, ct in enumerate(data['curvetype']):
+			if ct == 'illuminated':
+				params = fit_basic_jv_parameters(data['v'][i], data['i'][i], data['area'][i])
+			else:
+				params = {k:np.nan for k in basicparams}
+			for k, v in params.items():
+				data[k].append(v)
 
 	return data
 
@@ -335,6 +347,24 @@ def fit_light(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {}
 	results['vmpp'] = v[np.argmax(p)]
 	results['pce'] = p.max()*10
 	results['ff'] = p.max() / (results['voc']*results['jsc'])	
+
+	return results
+
+def fit_basic_jv_parameters(v, i, area):
+	"""
+	given lists/np arrays of voltage (V) and current (A), and area (cm^2),
+	 return the basic JV parameters (voc, jsc, vmpp, pce, ff)
+	"""
+	results = {}
+	v = np.array(v)
+	i = np.array(i)
+	j = i/area
+	p = v*j
+	results['voc'] = v[np.argmin(np.abs(j))]
+	results['jsc'] = j[np.argmin(np.abs(v))]
+	results['vmpp'] = v[np.argmax(p)]
+	results['pce'] = p.max()*10
+	results['ff'] = p.max() / (results['voc']*results['jsc'])
 
 	return results
 
