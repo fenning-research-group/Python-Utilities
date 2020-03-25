@@ -1,7 +1,8 @@
 import numpy as np
 import os
+from scipy.signal import find_peaks_cwt, savgol_filter
 
-def LoadSmartlab(fpath):
+def load_smartlab(fpath):
     """
     Function to load XRD data from Rigaku Smartlab .RAS files.
 
@@ -153,3 +154,64 @@ def LoadSmartlab(fpath):
 
 
         return data
+
+def remove_background(x, y, peaks = None, peakwidth = None, window = None, plot = False, verbose = False):
+    x = np.array(x)
+    y = np.array(y)
+    if peaks is None:
+        peaks = find_peaks_cwt(y, widths = np.arange(10,15), noise_perc = 0.02)
+    if peakwidth is None:
+        peakwidth = 1.5
+    if window is None:
+        window = int(len(x)/20)
+        if window%2 == 0:
+            window += 1
+    
+    rmidx = []
+    for p in peaks:
+        for rmidx_ in np.where(np.abs(x - x[p]) <= peakwidth/2)[0]:
+            if rmidx_ not in rmidx:
+                rmidx.append(rmidx_)
+    
+    xbl = np.delete(x, rmidx)
+    ybl = np.delete(y, rmidx)
+    ybl = np.interp(x, xbl, ybl)
+    ybl = savgol_filter(ybl, window, 1)
+    
+    y_corrected = y - ybl
+    y_corrected[y_corrected < 0] = 0
+    
+    if plot:
+        fig, ax = plt.subplots(figsize = (4,3))
+        ax.plot(x,y, 'k', alpha = 0.4, label = 'Raw', zorder = 3)
+        ax.plot(x,ybl, color = 'k', label = 'Baseline', zorder = 2)
+        ax.plot(x,y_corrected, color = plt.cm.tab10(0), label = 'Corrected', zorder = 1)
+        ylim0 = ax.get_ylim()
+        for p in x[p]:
+            ax.plot([p,p], ylim0, color = plt.cm.tab10(3), alpha = 0.2, zorder = 0)
+        plt.legend()
+        plt.show()
+        
+    if not verbose:
+        return y_corrected
+    else:
+        return {
+            'peaks': x[p],
+            'peaksidx': p,
+            'background': ybl,
+            'corrected': y_corrected,
+        }
+
+
+def bgRemove_deprecated(xdata,ydata,tol): # thank you: https://github.com/andrewrgarcia/XRDpy
+    'approx. # points for half width of peaks'
+    L=len(ydata)
+    lmda = int(0.50*L/(xdata[0]-xdata[L-1]))
+    newdat=np.zeros(L)
+    for i in range(L):
+        if ydata[(i+lmda)%L] > tol*ydata[i]:          #tolerance 'tol'
+            newdat[(i+lmda)%L] = ydata[(i+lmda)%L] - ydata[i]
+        else:
+            if ydata[(i+lmda)%L] < ydata[i]:
+                newdat[(i+lmda)%L] = 0
+    return newdat
