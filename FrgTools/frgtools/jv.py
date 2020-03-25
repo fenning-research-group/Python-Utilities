@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-def LoadTracer(fpath):
+def load_tracer(fpath, reversefirst = True):
 	"""
 	Loads JV scans taken by ReRa Tracer software. fpath must target a text file exported by right-clicking
 	scans in Tracer and selecting export.
@@ -29,37 +29,52 @@ def LoadTracer(fpath):
 	
 	data = {}
 	with open(fpath, 'r') as f:
-		data['ID'] = parseLine(f.readline(), 1, 1)
-		data['Device'] = parseLine(f.readline(), 1 ,1)
-		data['Curve'] = parseLine(f.readline(), 1 ,1)
-		for idx, each in enumerate(data['Curve']):
+		data['id'] = parseLine(f.readline(), 1, 1)
+		data['device'] = parseLine(f.readline(), 1 ,1)
+		data['curvetype'] = parseLine(f.readline(), 1 ,1)
+		for idx, each in enumerate(data['curvetype']):
 			if 'Ill' in each:
-				data['Curve'][idx] = 'Illuminated'
+				data['curvetype'][idx] = 'illuminated'
 			else:
-				data['Curve'][idx] = 'Dark'
-		data['Area'] = [float(x) for x in parseLine(f.readline(), 1 ,1)]
+				data['curvetype'][idx] = 'dark'
+		data['area'] = [float(x) for x in parseLine(f.readline(), 1 ,1)]
 		skipLines(f, 2)
-		data['Date'] = parseLine(f.readline(), 1 ,1)        
-		data['Time'] = parseLine(f.readline(), 1 ,1)
+		data['date'] = parseLine(f.readline(), 1 ,1)        
+		data['time'] = parseLine(f.readline(), 1 ,1)
 		skipLines(f, 4)
 		
-		data['V'] = [[] for x in range(len(data['Curve']))]
-		data['I'] = [[] for x in range(len(data['Curve']))]
-		data['P'] = [[] for x in range(len(data['Curve']))]
+		data['v'] = [[] for x in range(len(data['curvetype']))]
+		data['i'] = [[] for x in range(len(data['curvetype']))]
+		data['p'] = [[] for x in range(len(data['curvetype']))]
+		data['j'] = [[] for x in range(len(data['curvetype']))]
 		
 		for line in f:
 			raw = parseLine(line, 0, 0)
-			for i in range(len(data['Curve'])):
+			for i in range(len(data['curvetype'])):
 				try:
-					data['V'][i].append(float(raw[i*3 + 0]))
-					data['I'][i].append(float(raw[i*3 + 1]))
-					data['P'][i].append(float(raw[i*3 + 2]))
+					data['v'][i].append(float(raw[i*3 + 0]))
+					data['i'][i].append(float(raw[i*3 + 1]))
+					data['j'][i].append(float(raw[i*3 + 1])/data['area'][i])
+					data['p'][i].append(float(raw[i*3 + 2]))
 				except:
 					pass
-	
+
+		data['direction'] = []
+		for scanid in data['id']:
+			if scanid == '(2 of 2)':
+				if reversefirst:
+					data['direction'].append('forward')
+				else:
+					data['direction'].append('reverse')
+			else:
+				if reversefirst:
+					data['direction'].append('reverse')
+				else:
+					data['direction'].append('forward')
+
 	return data
 
-def LoadFRG(fpath):
+def load_FRG(fpath):
 	"""
 	Loads JV data as exported by Grace's FRG MATLAB software in late 2019
 	"""
@@ -139,7 +154,7 @@ def LoadFRG(fpath):
 			alldata[output['sampleName']] = output
 	return alldata
 
-def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 5000):
+def fit_dark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 5000):
 	"""
 	Takes inputs of voltage (V), measured current (A), and cell area (cm2)
 
@@ -204,7 +219,7 @@ def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 500
 	
 	return results
 
-def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {}, maxfev = 5000, type = None):
+def fit_light(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {}, maxfev = 5000, type = None, mute = False):
 	"""
 	Takes inputs of voltage (V), measured current (A), and cell area (cm2)
 
@@ -225,7 +240,8 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 	j = [i_/area for i_ in i]	#convert A to mA
 	
 	if max(j) > .05:
-		print('Current seems too high (max = {0} mA/cm2). Please double check that your area (cm2) and measured current (A) are correct.'.format(max(j*1000)))
+		if not mute:
+			print('Current seems too high (max = {0} mA/cm2). Please double check that your area (cm2) and measured current (A) are correct.'.format(max(j*1000)))
 
 	v = np.asarray(v)
 	j = np.asarray(j)
@@ -321,7 +337,6 @@ def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {},
 	results['ff'] = p.max() / (results['voc']*results['jsc'])	
 
 	return results
-
 
 ### Diode Models
 
