@@ -43,7 +43,10 @@ def load_tracer(fpath, reversefirst = True):
 		data['time'] = parseLine(f.readline(), 1 ,1)
 		skipLines(f, 4)
 		
-		for k in ['v','i','p','j']:
+
+		#read data, convert to numpy arrays
+		datacols = ['v','i','p','j']
+		for k in datacols:
 			data[k] = [[] for x in range(len(data['curvetype']))]
 		
 		for line in f:
@@ -57,6 +60,9 @@ def load_tracer(fpath, reversefirst = True):
 				except:
 					pass
 
+		for k in datacols:
+			for i in range(len(data[k])):
+				data[k][i] = np.asarray(data[k][i])
 		#append scan direction
 		data['direction'] = []
 		for scanid in data['id']:
