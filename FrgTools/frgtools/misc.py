@@ -1,9 +1,17 @@
 import os
 from tqdm import tqdm
 
-def listdir(path = '.', display = True):
-	exclude = ['desktop.ini']
-	fids = [os.path.abspath(os.path.join(path, x)) for x in os.listdir(path) if not any([exclude_ in x for exclude_ in exclude])]
+#search directories
+
+def listdir(path = '.', find = None, ignore = ['desktop.ini'], display = True):
+	if type(find) is str:
+		find = [find]
+	if type(ignore) is str:
+		ignore = [ignore]
+	
+	fids = [os.path.abspath(os.path.join(path, x)) for x in os.listdir(path) if not any([exclude_ in x for exclude_ in ignore])]
+	if find is not None:
+		fids = [f for f in fids if any([include_ in f for include_ in find])]
 	if display:
 		print('Files in \'{}\':'.format(path))
 		for i, f in enumerate(fids):
@@ -21,23 +29,44 @@ def searchdir(path = '.', find = [], ignore = ['desktop.ini'], fids = [], match_
 	Traverses all subdirectories of a given path and return files which contain strings included in "find".
 	Ignores files and folders that contain strings included in "ignore"
 	"""
+	if type(find) is str:
+		find = [find]
+	if type(ignore) is str:
+		ignore = [ignore]
+		
 	f1s = [os.path.abspath(os.path.join(path, x)) for x in os.listdir(path) if not any([y in x for y in ignore])]
-	for f1 in tqdm(f1s, leave = False, desc = path):
+	for f1 in f1s:
 		if match_directories:
 			comparestring = f1
 		else:
 			comparestring = os.path.basename(f1)
-
 		if os.path.isdir(f1):
 			try:
 				fids = searchdir(path = f1, find = find, ignore = ignore, fids = fids, match_directories = match_directories)
 			except:
-				tqdm.write('Error searching {}'.format(f1))
+				print('Error searching {}'.format(f1))
 		elif any([x in comparestring for x in find]):
 			fids.append(f1)
 	temp = fids.copy()
 	fids = []
 	return temp
+
+# load video numpy array
+import cv2
+import numpy as np
+
+def load_video(fid):
+    cap = cv2.VideoCapture(filename = fid)
+    frames = []
+    cap.open(filename = fid)
+    while (cap.isOpened()):
+        ret,frame = cap.read()
+        if not ret:
+            break
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frames.append(gray)
+    cap.release()
+    return np.array(frames)
 
 ### script to send email from generic FRG alert address
 import smtplib
@@ -49,7 +78,7 @@ senderAddress = 'frgalerts@gmail.com'
 senderPassword = 'sggdoxnrywcjucaj'
 
 
-def SendEmail(recipient, subject = '', body = ''):
+def sendemail(recipient, subject = '', body = ''):
 	fromaddr = senderAddress
 	server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
 	server.login(senderUsername, senderPassword)
