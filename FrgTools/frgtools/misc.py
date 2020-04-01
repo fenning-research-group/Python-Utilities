@@ -33,7 +33,7 @@ def searchdir(path = '.', find = [], ignore = ['desktop.ini'], fids = [], match_
 		find = [find]
 	if type(ignore) is str:
 		ignore = [ignore]
-		
+
 	f1s = [os.path.abspath(os.path.join(path, x)) for x in os.listdir(path) if not any([y in x for y in ignore])]
 	for f1 in f1s:
 		if match_directories:
@@ -55,8 +55,13 @@ def searchdir(path = '.', find = [], ignore = ['desktop.ini'], fids = [], match_
 import cv2
 import numpy as np
 
-def load_video(fid):
-    cap = cv2.VideoCapture(filename = fid)
+def load_video(fpath):
+	"""
+	Loads a video, returns frame by frame as numpy array
+
+	fpath: string, filepath to video file.
+	"""
+    cap = cv2.VideoCapture(filename = fpath)
     frames = []
     cap.open(filename = fid)
     while (cap.isOpened()):
