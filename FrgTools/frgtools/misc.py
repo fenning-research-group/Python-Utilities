@@ -3,7 +3,17 @@ from tqdm import tqdm
 
 #search directories
 
-def listdir(path = '.', find = None, ignore = ['desktop.ini'], display = True):
+def listdir(path = '.', find = None, ignore = ['desktop.ini', '.DS_Store'], list_directories = True, display = False):
+	"""
+	path: path to directory whose contents are to be listed
+	find: list of substrings used to identify files/folders of interest.
+	ignore: list of substrings used to identify files/folders to ignore
+	list_directories: boolean flag, determines whether or not to list directories.
+	display: boolean flag. prints out a list of filenames/indices to console to aid indexing.
+
+	Traverses all subdirectories of a given path and return files which contain strings included in "find".
+	Ignores files and folders that contain strings included in "ignore"
+	"""
 	if type(find) is str:
 		find = [find]
 	if type(ignore) is str:
@@ -12,13 +22,15 @@ def listdir(path = '.', find = None, ignore = ['desktop.ini'], display = True):
 	fids = [os.path.abspath(os.path.join(path, x)) for x in os.listdir(path) if not any([exclude_ in x for exclude_ in ignore])]
 	if find is not None:
 		fids = [f for f in fids if any([include_ in f for include_ in find])]
+	if not list_directories:
+		fids = [f for f in fids if not os.path.isdir(f)]
 	if display:
 		print('Files in \'{}\':'.format(path))
 		for i, f in enumerate(fids):
 			print('{}:{}'.format(i, os.path.basename(f)))
 	return fids
 
-def searchdir(path = '.', find = [], ignore = ['desktop.ini'], fids = [], match_directories = False):
+def searchdir(path = '.', find = [], ignore = ['desktop.ini', '.DS_Store'], fids = [], match_directories = False):
 	"""
 	path: path to directory to be searched
 	find: list of substrings used to identify files of interest.
@@ -61,17 +73,17 @@ def load_video(fpath):
 
 	fpath: string, filepath to video file.
 	"""
-    cap = cv2.VideoCapture(filename = fpath)
-    frames = []
-    cap.open(filename = fid)
-    while (cap.isOpened()):
-        ret,frame = cap.read()
-        if not ret:
-            break
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frames.append(gray)
-    cap.release()
-    return np.array(frames)
+	cap = cv2.VideoCapture(filename = fpath)
+	frames = []
+	cap.open(filename = fpath)
+	while (cap.isOpened()):
+		ret,frame = cap.read()
+		if not ret:
+			break
+		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		frames.append(gray)
+	cap.release()
+	return np.array(frames)
 
 ### script to send email from generic FRG alert address
 import smtplib
