@@ -5,7 +5,7 @@ from PIL import Image
 
 ## Affine transformation scripts
 
-def AffineTransform(img, T, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
+def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
 	"""
 	Performs an affine transformation on an array image, returns the transformed array
 
@@ -65,7 +65,7 @@ def AffineTransform(img, T, resample = Image.NEAREST, plot = False, adjustcenter
 
 	return img_t
 
-def AffineCalculate(p1, p2):
+def affine_calculate(p1, p2):
 	"""
 	Takes two m x 2 lists or numpy arrays of points, calculated the affine transformation matrix to move p1 -> p2
 	"""
@@ -84,6 +84,34 @@ def AffineCalculate(p1, p2):
 	T[2, :2] = [0,0]
 
 	return T
+
+
+## image imputing
+
+def impute_nearest(data, invalid = None):
+	"""
+	Replace the value of invalid 'data' cells (indicated by 'invalid') 
+	by the value of the nearest valid data cell
+
+	Input:
+		data:    numpy array of any dimension
+		invalid: a binary array of same shape as 'data'. True cells set where data
+				 value should be replaced.
+				 If None (default), use: invalid  = np.isnan(data)
+
+	Output: 
+		Return a filled array. 
+	"""
+	#import numpy as np
+	#import scipy.ndimage as nd
+
+	if invalid is None: invalid = np.isnan(data)
+
+	ind = nd.distance_transform_edt(invalid, return_distances=False, return_indices=True) #return indices of nearest coordinates to each invalid point
+	return data[tuple(ind)]	
+
+
+## pick points on image
 
 class __ImgPicker():
 		def __init__(self, img, pts, markersize = 0.3, **kwargs):
@@ -134,7 +162,7 @@ class __ImgPicker():
 				self.fig.canvas.draw()
 				self.fig.canvas.flush_events()
 
-def ImagePointPicker(img, pts = 4, **kwargs):
+def pick_points(img, pts = 4, **kwargs):
 	"""
 	Given an image and a number of points, allows the user to interactively select points on the image.
 	These points are returned when the "Done" button is pressed. Useful to generate inputs for AffineCalculate.

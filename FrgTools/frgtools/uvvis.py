@@ -2,7 +2,7 @@ import os
 import csv
 import numpy as np
 
-def LoadLambda(fpath):
+def load_lambda(fpath):
 	def readLambdaCSV(fpath):
 		wl = []
 		signal = []

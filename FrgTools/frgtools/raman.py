@@ -2,12 +2,12 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-def ShiftToNm(shift, incident_wl):
+def shifttonm(shift, incident_wl):
     incident_wn = 1/(incident_wl * 1e-7)
     exit_wn = incident_wn - shift
     return 1e7/exit_wn 
 
-def LoadRenishaw(path, incident_wl):
+def load_renishaw(path, incident_wl):
     fids = [os.path.join(path, x) for x in os.listdir(path)]
     allx = []
     ally = []

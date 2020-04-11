@@ -4,7 +4,7 @@ from scipy import ndimage as nd
 import imreg_dft as ird
 from .curveprocessing import RemoveBaseline
 
-def FullSpectrumFit(wavelengths, reflectance, plot = False):
+def fit_fullspectrum(wavelengths, reflectance, plot = False):
 	eva_peak = 1730
 	eva_tolerance = 5
 	h2o_peak = 1902
@@ -48,7 +48,7 @@ def FullSpectrumFit(wavelengths, reflectance, plot = False):
 
 	return h2o_meas
 
-def ThreePointFit(wavelengths, reflectance, celltype, plot = False):
+def fit_threepoint(wavelengths, reflectance, celltype, plot = False):
 	if str.lower(celltype) in ['albsf2', 'al-bsf2']:
 		wl_eva = 1730
 		wl_h2o = 1902
@@ -106,7 +106,7 @@ def ThreePointFit(wavelengths, reflectance, celltype, plot = False):
 	# avgRef = np.mean(ref, axis = 2)
 	return h2o_meas
 
-def ExpectedWater(temperature, relhum, material = 'EVA9100'):
+def expectedwater(temperature, relhum, material = 'EVA9100'):
 	"""
 	Given a temperature (C) and relative humidity (%), calculates the saturation water content in solar encapsulants
 	based on literature data or experiments carried out at Arizona State University as part of the PVRD2 project.
@@ -146,33 +146,10 @@ def ExpectedWater(temperature, relhum, material = 'EVA9100'):
 
 	return waterConcentration
 
-def ExpectedDiffusivity(temperature, material = 'EVA9100'):
+def expecteddiffusivity(temperature, material = 'EVA9100'):
 	"""
 	Given a temperature, calculates the diffusivity of water in EVA9100
 	"""
 
 	diffusivity = 0.001353*np.exp(-0.191*(1/(273.15 + temperature))/(8.617e-5));  #ASU uptake fit 2018-11-27     
 	return diffusivity
-
-
-def ImputeWater(data, invalid = None):
-	"""
-	Replace the value of invalid 'data' cells (indicated by 'invalid') 
-	by the value of the nearest valid data cell
-
-	Input:
-		data:    numpy array of any dimension
-		invalid: a binary array of same shape as 'data'. True cells set where data
-				 value should be replaced.
-				 If None (default), use: invalid  = np.isnan(data)
-
-	Output: 
-		Return a filled array. 
-	"""
-	#import numpy as np
-	#import scipy.ndimage as nd
-
-	if invalid is None: invalid = np.isnan(data)
-
-	ind = nd.distance_transform_edt(invalid, return_distances=False, return_indices=True)
-	return data[tuple(ind)]	
