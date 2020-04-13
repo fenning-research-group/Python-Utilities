@@ -2,7 +2,7 @@ import os
 import csv
 import numpy as np
 
-def LoadPyris(fpath):
+def load_pyris(fpath):
 	"""
 	Loads data exported by Lambda Pyris FTIR tool in UCSD Materials Research Center basement.
 	"""

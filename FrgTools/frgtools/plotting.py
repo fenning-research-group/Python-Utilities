@@ -6,7 +6,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import LogNorm
 # from matplotlib import lines
 
-def Scalebar(ax = None, scale = 1, **kwargs):
+def scalebar(ax = None, scale = 1, **kwargs):
 	"""
 	Lightweight wrapper around matplotlib_scalebar.scalebar.ScaleBar
 	Default positioning and text color (white text on low opacity black background in lower right corner)
@@ -37,7 +37,7 @@ def Scalebar(ax = None, scale = 1, **kwargs):
 	ax.add_artist(sb)
 	return sb
 	
-def Colorbar(im, ax = None, orientation = 'vertical', **kwargs):
+def colorbar(im, ax = None, orientation = 'vertical', **kwargs):
 	if ax is None:
 		ax = plt.gca()
 
@@ -58,7 +58,7 @@ def Colorbar(im, ax = None, orientation = 'vertical', **kwargs):
 
 ### Plot Builders
 
-def Waterfall(data, ax = None, lognorm = False, ticks = {}, tickoffset = 0, tickwidth = 1, **kwargs):
+def waterfall(data, ax = None, lognorm = False, ticks = {}, tickoffset = 0, tickwidth = 1, **kwargs):
 	if ax == None:
 		fig, ax = plt.subplots(figsize = (8, 4))
 
@@ -111,8 +111,7 @@ def Waterfall(data, ax = None, lognorm = False, ticks = {}, tickoffset = 0, tick
 	ax.set_ylim((0, ytop))
 	# plt.show()
 
-
-def CategoricalHeatmap(x, y, z, ax = None, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean'):
+def categorical_heatmap(x, y, z, ax = None, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean'):
 	"""
 	Takes three 1-d inputs (x, y, z) and constructs an x by y heatmap with values z.
 	"""
