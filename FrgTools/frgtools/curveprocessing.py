@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import savgol_filter
 from math import ceil
 
-def RemoveBaseline(spectrum, sensitivity = 5):
+def remove_baseline(spectrum, sensitivity = 5):
 	"""
 	Given a series of values and a somewhat arbitrary sensitivity value, approximates
 	a baseline by iterative savitsky-golay smoothing with increasing window size. The baseline

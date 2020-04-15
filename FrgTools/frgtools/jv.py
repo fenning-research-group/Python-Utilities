@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-def LoadTracer(fpath):
+def load_tracer(fpath):
 	"""
 	Loads JV scans taken by ReRa Tracer software. fpath must target a text file exported by right-clicking
 	scans in Tracer and selecting export.
@@ -59,7 +59,7 @@ def LoadTracer(fpath):
 	
 	return data
 
-def LoadFRG(fpath):
+def load_FRG(fpath):
 	"""
 	Loads JV data as exported by Grace's FRG MATLAB software in late 2019
 	"""
@@ -139,7 +139,7 @@ def LoadFRG(fpath):
 			alldata[output['sampleName']] = output
 	return alldata
 
-def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 5000):
+def fit_dark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 5000):
 	"""
 	Takes inputs of voltage (V), measured current (A), and cell area (cm2)
 
@@ -204,7 +204,7 @@ def FitDark(v, i, area, plot = False, init_guess = {}, bounds = {}, maxfev = 500
 	
 	return results
 
-def FitLight(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {}, maxfev = 5000, type = None):
+def fit_light(v, i, area, diodes = 2, plot = False, init_guess = {}, bounds = {}, maxfev = 5000, type = None):
 	"""
 	Takes inputs of voltage (V), measured current (A), and cell area (cm2)
 
