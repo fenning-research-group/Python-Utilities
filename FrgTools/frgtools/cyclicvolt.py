@@ -2,7 +2,6 @@
 """
 Loads CV data from a text file. Pulls the last curve out of the
 repeats (red/ox cycle).
-Returns structure. 
 
 Example: mydata = getCV(use UI to select file)
 
