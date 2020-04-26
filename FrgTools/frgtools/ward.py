@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import ndimage as nd
 import imreg_dft as ird
-from .curveprocessing import RemoveBaseline
+from .curveprocessing import remove_baseline
 
 def fit_fullspectrum(wavelengths, reflectance, plot = False):
 	eva_peak = 1730
