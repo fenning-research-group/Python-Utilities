@@ -1,5 +1,6 @@
 import os
 from tqdm import tqdm
+import re
 
 def listdir(path = '.', display = True):
 	exclude = ['desktop.ini']
@@ -39,6 +40,45 @@ def searchdir(path = '.', find = [], ignore = ['desktop.ini'], fids = [], match_
 	fids = []
 	return temp
 
+<<<<<<< Updated upstream
+=======
+def natsort(l):
+    """
+    Input a list (os.listdir(path))
+    Natsort will sort list 'l' as windows does. 
+
+    Example:
+    List: [PL1, PL10, PL11, PL2, PL3]
+	natsort(List) -> [PL1,PL2,PL3,PL10,PL11]
+    """
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    l.sort( key=alphanum_key )
+    return l
+
+# load video numpy array
+import cv2
+import numpy as np
+
+def load_video(fpath):
+	"""
+	Loads a video, returns frame by frame as numpy array
+
+	fpath: string, filepath to video file.
+	"""
+	cap = cv2.VideoCapture(filename = fpath)
+	frames = []
+	cap.open(filename = fpath)
+	while (cap.isOpened()):
+		ret,frame = cap.read()
+		if not ret:
+			break
+		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		frames.append(gray)
+	cap.release()
+	return np.array(frames)
+
+>>>>>>> Stashed changes
 ### script to send email from generic FRG alert address
 import smtplib
 from email.mime.text import MIMEText
