@@ -40,8 +40,6 @@ def searchdir(path = '.', find = [], ignore = ['desktop.ini'], fids = [], match_
 	fids = []
 	return temp
 
-<<<<<<< Updated upstream
-=======
 def natsort(l):
     """
     Input a list (os.listdir(path))
@@ -56,6 +54,7 @@ def natsort(l):
     l.sort( key=alphanum_key )
     return l
 
+    
 # load video numpy array
 import cv2
 import numpy as np
@@ -78,7 +77,7 @@ def load_video(fpath):
 	cap.release()
 	return np.array(frames)
 
->>>>>>> Stashed changes
+
 ### script to send email from generic FRG alert address
 import smtplib
 from email.mime.text import MIMEText
