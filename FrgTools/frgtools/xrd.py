@@ -160,7 +160,7 @@ def load_smartlab(fpath):
         # data['angles'] = np.linspace(internal['scan_angle_start'], internal['scan_angle_stop'], internal['points_per_scan'])
 
         if scan_is_3d:
-            for k, v in internal['MEAS_COND_AXIS_NAME-'].items():
+            for k, v in internal['MEAS_COND_AXIS_NAME'].items():
                 if v == internal['MEAS_3DE_STEP_AXIS_INTERNAL']:
                     axis2_idx = k
                     data['angles2'] = internal['MEAS_COND_AXIS_POSITION'][axis2_idx]
