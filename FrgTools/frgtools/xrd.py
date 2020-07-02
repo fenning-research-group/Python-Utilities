@@ -132,7 +132,7 @@ def load_smartlab(fpath):
                             data['scanmode'] = val
                         if key == "MEAS_SCAN_SPEED":
                             data['scanspeed'] = float(val)
-                        if key = "MEAS_3DE_STEP_AXIS_INTERNAL":
+                        if key == "MEAS_3DE_STEP_AXIS_INTERNAL":
                             scan_is_3d = True
                             internal['MEAS_3DE_STEP_AXIS_INTERNAL'] = val.strip()
 
