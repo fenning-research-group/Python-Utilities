@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from scipy.signal import find_peaks_cwt, savgol_filter
+import re
 
 def load_smartlab(fpath):
     """
@@ -39,6 +40,8 @@ def load_smartlab(fpath):
         scan_data    = []
         scan_angle   = []
         header_initialized = False
+        scan_is_3d = False
+
         for line in f:
             if line.strip():
                 line = line.strip()
@@ -62,6 +65,7 @@ def load_smartlab(fpath):
                         print("Data not complete. Number of data point missing for this scan: ", pad_points)
                         pad_data   = [0]*pad_points
                         scan_data.extend(pad_data)
+                    data['angles'] = scan_angle
                     data['counts'].append(scan_data)
                     data['numscans'] +=1
                     scan_data = []
@@ -128,6 +132,9 @@ def load_smartlab(fpath):
                             data['scanmode'] = val
                         if key == "MEAS_SCAN_SPEED":
                             data['scanspeed'] = float(val)
+                        if key = "MEAS_3DE_STEP_AXIS_INTERNAL":
+                            scan_is_3d = True
+                            internal['MEAS_3DE_STEP_AXIS_INTERNAL'] = val.strip()
 
                             
                     else: #Header already initialized, we add new position to the axis, if they are number and not string.
@@ -150,7 +157,13 @@ def load_smartlab(fpath):
         data['counts'] = np.asarray(data['counts'])
         if data['numscans'] == 1:
             data['counts'] = data['counts'][0]
-        data['angles'] = np.linspace(internal['scan_angle_start'], internal['scan_angle_stop'], internal['points_per_scan'])
+        # data['angles'] = np.linspace(internal['scan_angle_start'], internal['scan_angle_stop'], internal['points_per_scan'])
+
+        if scan_is_3d:
+            for k, v in internal['MEAS_COND_AXIS_NAME-'].items():
+                if v == internal['MEAS_3DE_STEP_AXIS_INTERNAL']:
+                    axis2_idx = k
+                    data['angles2'] = internal['MEAS_COND_AXIS_POSITION'][axis2_idx]
 
 
         return data
