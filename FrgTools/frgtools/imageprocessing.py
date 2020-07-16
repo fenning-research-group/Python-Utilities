@@ -2,8 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from PIL import Image
-
+import affine6p
 ## Affine transformation scripts
+T = affine6p.estimate(f['fits']['registrationpoints'][()], p0Water).get_matrix()
+						dfData['Water'].append(AffineTransform(f['fits']['water'][()], T)[:47, :47])
+
 
 def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
 	"""
@@ -65,23 +68,14 @@ def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcente
 
 	return img_t
 
-def affine_calculate(p1, p2):
+def affine_calculate(p, p0):
 	"""
-	Takes two m x 2 lists or numpy arrays of points, calculated the affine transformation matrix to move p1 -> p2
+	Takes two m x 2 lists or numpy arrays of points, calculated the affine transformation matrix to move p -> p0
 	"""
-	p1 = np.array(p1)
-	p2 = np.array(p2)
+	p1 = np.array(p)
+	p2 = np.array(p0)
 
-	# if p1.shape[0] < p1.shape[1]:
-	# 	p1 = np.transpose(p1)
-	# if p2.shape[0] < p2.shape[1]:
-	# 	p2 = np.transpose(p2)
-
-	p1 = np.hstack((p1, np.ones((p1.shape[0], 1))))
-	p2 = np.hstack((p2, np.ones((p2.shape[0], 1))))
-
-	T, _, _, _ = np.linalg.lstsq(p1, p2, rcond = None)
-	T[2, :2] = [0,0]
+	T = affine6p.estimate(p, p0).get_matrix()
 
 	return T
 
@@ -161,6 +155,35 @@ class __ImgPicker():
 
 				self.fig.canvas.draw()
 				self.fig.canvas.flush_events()
+
+class AffineTransformHelper:
+	'''
+	Object to aid in manual image registration using affine transformations (rotation, translation, and rescaling). 
+
+	Usage:
+		- initialize the object by inputting a reference image and the number of registration points. kwargs can be passed to 
+				the plt.plot() command to improve image plotting to aid in placement of registration points
+			- a new reference image can be used with the .set_reference() command
+		- fit the transform between a new image and the reference image by .fit(img = new_image)
+		- the affine transformation matrix moving any image such that the new image would match the reference image 
+			can be applied by .apply(img = moving_image)
+
+	NOTE: this object relies of interactive matplotlib widgets. Jupyter lab plot backends will not play nicely with this tool.
+			Jupyter notebook, however, will work with the "%matplotlib notebook" magic command enabled.
+	'''
+	def __init__(img, pts, **kwargs):
+		self.set_reference(img, pts, **kwargs)
+
+	def set_reference(self, img, pts, **kwargs):
+		self.num_pts = pts
+		self.reference_pts = pick_points(img, pts)
+
+	def fit(self, img):
+		self.moving_pts = pick_points(img, pts = self.num_pts)
+		self.T = affine_calculate(self.moving_pts, self.reference_pts)
+
+	def apply(self, img, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
+		return affine_transform(img, self.T, resample = resample, plot = plot, adjustcenterofrotation = adjustcenterofrotation, **kwargs)
 
 def pick_points(img, pts = 4, **kwargs):
 	"""
