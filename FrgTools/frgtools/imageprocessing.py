@@ -4,9 +4,6 @@ from matplotlib.widgets import Button
 from PIL import Image
 import affine6p
 ## Affine transformation scripts
-T = affine6p.estimate(f['fits']['registrationpoints'][()], p0Water).get_matrix()
-						dfData['Water'].append(AffineTransform(f['fits']['water'][()], T)[:47, :47])
-
 
 def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
 	"""
@@ -156,7 +153,7 @@ class __ImgPicker():
 				self.fig.canvas.draw()
 				self.fig.canvas.flush_events()
 
-class AffineTransformHelper:
+class AffineTransformer:
 	'''
 	Object to aid in manual image registration using affine transformations (rotation, translation, and rescaling). 
 
@@ -171,14 +168,17 @@ class AffineTransformHelper:
 	NOTE: this object relies of interactive matplotlib widgets. Jupyter lab plot backends will not play nicely with this tool.
 			Jupyter notebook, however, will work with the "%matplotlib notebook" magic command enabled.
 	'''
-	def __init__(img, pts, **kwargs):
+	def __init__(self, img, pts, **kwargs):
 		self.set_reference(img, pts, **kwargs)
 
 	def set_reference(self, img, pts, **kwargs):
 		self.num_pts = pts
 		self.reference_pts = pick_points(img, pts)
+		self.reference_shape = img.shape
 
 	def fit(self, img):
+		if img.shape != self.reference_shape:
+			print('Warning: moving image and reference image have different dimensions - look out for funny business')
 		self.moving_pts = pick_points(img, pts = self.num_pts)
 
 	def apply(self, img, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
