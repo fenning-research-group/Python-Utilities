@@ -180,9 +180,12 @@ class AffineTransformHelper:
 
 	def fit(self, img):
 		self.moving_pts = pick_points(img, pts = self.num_pts)
-		self.T = affine_calculate(self.moving_pts, self.reference_pts)
 
 	def apply(self, img, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
+		# Note: the affine_calculate() call would ideally be in .fit(), but this is a silly workaround that
+		# 		makes the helper play nice with Jupyter notebook. Issue is that the plot is nonblocking in notebook,
+		#		so affine_calculate() gets called before the user has a chane to select points on the moving image.
+		self.T = affine_calculate(self.moving_pts, self.reference_pts)
 		return affine_transform(img, self.T, resample = resample, plot = plot, adjustcenterofrotation = adjustcenterofrotation, **kwargs)
 
 def pick_points(img, pts = 4, **kwargs):
