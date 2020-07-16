@@ -52,7 +52,6 @@ def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcente
 	    Image.AFFINE,
 	    data = T_inv.flatten()[:6],
 	    resample = resample,
-	    fillcolor = np.nan
 	)
 	img_t = np.array(img_t)
 	
