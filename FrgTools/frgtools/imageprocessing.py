@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from PIL import Image
 import affine6p
+from skimage.transform import resize as skim_resize
 ## Affine transformation scripts
 
 def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
@@ -105,53 +106,53 @@ def impute_nearest(data, invalid = None):
 ## pick points on image
 
 class __ImgPicker():
-		def __init__(self, img, pts, markersize = 0.3, **kwargs):
-			self.numPoints = pts
-			self.currentPoint = 0
-			self.finished = False
-			self.markersize = markersize
+	def __init__(self, img, pts, markersize = 0.3, **kwargs):
+		self.numPoints = pts
+		self.currentPoint = 0
+		self.finished = False
+		self.markersize = markersize
 
-			self.fig, self.ax = plt.subplots()
-			self.ax.imshow(img, picker = True, **kwargs)
-			self.fig.canvas.mpl_connect('pick_event', self.onpick)
+		self.fig, self.ax = plt.subplots()
+		self.ax.imshow(img, picker = True, **kwargs)
+		self.fig.canvas.mpl_connect('pick_event', self.onpick)
 
-			self.buttonAx = plt.axes([0.4, 0, 0.1, 0.075])
-			self.stopButton = Button(self.buttonAx, 'Done')
-			self.stopButton.on_clicked(self.setFinished)
+		self.buttonAx = plt.axes([0.4, 0, 0.1, 0.075])
+		self.stopButton = Button(self.buttonAx, 'Done')
+		self.stopButton.on_clicked(self.setFinished)
 
-			self.pickedPoints = [None for x in range(self.numPoints)]
-			self.pointArtists = [None for x in range(self.numPoints)]
-			self.pointText = [None for x in range(self.numPoints)]
+		self.pickedPoints = [None for x in range(self.numPoints)]
+		self.pointArtists = [None for x in range(self.numPoints)]
+		self.pointText = [None for x in range(self.numPoints)]
 
-			plt.show(block = True)        
-		
-		def setFinished(self, event):
-			self.finished = True
-			plt.close(self.fig)
-		
-		def onpick(self, event):
-			if not self.finished:
-				mevt = event.mouseevent
-				idx = self.currentPoint % self.numPoints
-				self.currentPoint += 1
+		plt.show(block = True)        
+	
+	def setFinished(self, event):
+		self.finished = True
+		plt.close(self.fig)
+	
+	def onpick(self, event):
+		if not self.finished:
+			mevt = event.mouseevent
+			idx = self.currentPoint % self.numPoints
+			self.currentPoint += 1
 
-				x = mevt.xdata
-				y = mevt.ydata
-				self.pickedPoints[idx] = [x,y]
+			x = mevt.xdata
+			y = mevt.ydata
+			self.pickedPoints[idx] = [x,y]
 
-				if self.pointArtists[idx] is not None:
-					self.pointArtists[idx].remove()
-				self.pointArtists[idx] = plt.Circle((x,y), self.markersize, color = [1,1,1])
-				self.ax.add_patch(self.pointArtists[idx])
+			if self.pointArtists[idx] is not None:
+				self.pointArtists[idx].remove()
+			self.pointArtists[idx] = plt.Circle((x,y), self.markersize, color = [1,1,1])
+			self.ax.add_patch(self.pointArtists[idx])
 
-				if self.pointText[idx] is not None:
-					self.pointText[idx].set_position((x,y))
-				else:
-					self.pointText[idx] = self.ax.text(x,y, '{0}'.format(idx), color = [0,0,0], ha = 'center', va = 'center')
-					self.ax.add_artist(self.pointText[idx])
+			if self.pointText[idx] is not None:
+				self.pointText[idx].set_position((x,y))
+			else:
+				self.pointText[idx] = self.ax.text(x,y, '{0}'.format(idx), color = [0,0,0], ha = 'center', va = 'center')
+				self.ax.add_artist(self.pointText[idx])
 
-				self.fig.canvas.draw()
-				self.fig.canvas.flush_events()
+			self.fig.canvas.draw()
+			self.fig.canvas.flush_events()
 
 class AffineTransformer:
 	'''
@@ -179,14 +180,40 @@ class AffineTransformer:
 	def fit(self, img):
 		if img.shape != self.reference_shape:
 			print('Warning: moving image and reference image have different dimensions - look out for funny business')
-		self.moving_pts = pick_points(img, pts = self.num_pts)
+			img_t = self._resize(img, order = 0)
+			self.resize_default = True
+		else:
+			img_t = img 
+			self.resize_default = False
 
-	def apply(self, img, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
+		self.moving_pts = pick_points(img_t, pts = self.num_pts)
+
+	def apply(self, img, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, resize = None, order = 0, **kwargs):
 		# Note: the affine_calculate() call would ideally be in .fit(), but this is a silly workaround that
 		# 		makes the helper play nice with Jupyter notebook. Issue is that the plot is nonblocking in notebook,
 		#		so affine_calculate() gets called before the user has a chane to select points on the moving image.
+
+		if resize is None:
+			resize = self.resize_default
+
 		self.T = affine_calculate(self.moving_pts, self.reference_pts)
-		return affine_transform(img, self.T, resample = resample, plot = plot, adjustcenterofrotation = adjustcenterofrotation, **kwargs)
+
+		if resize:
+			img_t = self._resize(img, order = order) 
+		else:
+			img_t = img
+		img_t = affine_transform(img_t, self.T, resample = resample, plot = plot, adjustcenterofrotation = adjustcenterofrotation, **kwargs)
+
+		return img_t
+
+	def _resize(self, img, order = 0):
+		xratio = img.shape[1] / self.reference_shape[1]
+		yratio = img.shape[0] / self.reference_shape[0]
+
+		target_shape = np.round(img.shape / np.min([xratio, yratio])).astype(int)
+		img_t = skim_resize(img, target_shape, order = order)
+		return img_t[:self.reference_shape[0], :self.reference_shape[1]]
+
 
 def pick_points(img, pts = 4, **kwargs):
 	"""

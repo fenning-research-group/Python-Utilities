@@ -6,6 +6,40 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import LogNorm
 # from matplotlib import lines
 
+def hline(y, ax = None, **kwargs):
+
+	lineArguments = {
+		'color': 'k',
+		'linestyle': ':'
+	}
+
+	for k,v in kwargs.items():
+		lineArguments[k] = v
+
+	if ax is None:
+		ax = plt.gca()
+
+	xlim0 = ax.get_xlim()
+	ax.plot(xlim0, [y, y], **lineArguments)
+	ax.set_xlim(xlim0)
+
+def vline(x, ax = None, **kwargs):
+
+	lineArguments = {
+		'color': 'k',
+		'linestyle': ':'
+	}
+
+	for k,v in kwargs.items():
+		lineArguments[k] = v
+
+	if ax is None:
+		ax = plt.gca()
+
+	ylim0 = ax.get_ylim()
+	ax.plot([x, x], ylim0, **lineArguments)
+	ax.set_ylim(ylim0)
+
 def scalebar(ax = None, scale = 1, **kwargs):
 	"""
 	Lightweight wrapper around matplotlib_scalebar.scalebar.ScaleBar
