@@ -294,6 +294,7 @@ def directional_arrows(x, y, step = 1, interval = None, ax = None, **kwargs):
             xy = (xavg+8*dx, yavg+8*dy),
             xytext = (xavg, yavg),
             s = '',
+            annotation_clip = True,
             arrowprops = dict(
                 **arrow_kwargs
             ),
