@@ -256,7 +256,17 @@ def directional_arrows(x, y, step = 1, interval = None, ax = None, **kwargs):
     
     if ax is None:
         ax = plt.gca()
+
+    xmin, xmax = ax.get_xlim()
+    ymin, ymax = ax.get_ylim()
         
+    def is_visible(x,y):
+        if x > xmax or x < xmin:
+            return False
+        if y > ymax or y < ymin:
+            return False
+        return True
+
     if interval is None:
         interval = int(len(x) / 10) #default interval makes 10 arrows across entire dataset
         if interval == 0:
@@ -288,6 +298,8 @@ def directional_arrows(x, y, step = 1, interval = None, ax = None, **kwargs):
         x0, y0 = x[idx0], y[idx0]
         x1, y1 = x[idx1], y[idx1]
         xavg, yavg = [(a[idx0]+a[idx1])/2 for a in [x,y]]
+        if not is_visible(xavg,yavg):
+            continue
         dx = (x1-x0)/100
         dy = (y1-y0)/100
         ax.annotate(

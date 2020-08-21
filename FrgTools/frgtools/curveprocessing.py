@@ -52,9 +52,81 @@ def remove_baseline(spectrum, sensitivity = 5):
 		if n > nmax:
 			foundMin = True
 
-	minIdx = np.argmin(A[sensitivity + 1:]) + sensitivity
+	minIdx = np.argmin(A[sensitivity:]) + sensitivity
 	baseline = baselines[minIdx][lp:-lp]
 	spectrum_corrected = spectrum - baseline
 
 	return spectrum_corrected, baseline
 
+
+### general functional forms for curve fitting
+
+
+def lorentzian(x, amplitude, center, width):
+	return (amplitude*width**2) / ((x-center)**2 + width**2)	
+
+def n_lorentzian(n, x, *args):
+	'''
+	sum of n lorentzian curves. arguments should be passed in order amplitude_1, center_1, width_1, amplitude_2...etc
+	'''
+	if len(args) != n*3:
+		print('Error: must be three arguments (amplitude, center, and width) per lorentzian!')
+		return
+
+	y = 0
+	for idx in range(n):
+		amplitude = args[3*idx]
+		center = args[3*idx + 1]
+		width = args[3*idx + 2]
+
+		y += lorentzian(x,amplitude,center,width)
+
+	return y
+
+
+def gaussian(x, amplitude, center, sigma):
+	return amplitude * np.exp(-(x-center)**2 / (2*sigma**2))
+
+def n_gaussian(n, x, *args):
+	'''
+	sum of n gaussian curves. arguments should be passed in order amplitude_1, center_1, width_1, amplitude_2...etc
+	'''
+	if len(args) != n*3:
+		print('Error: must be three arguments (amplitude, center, and standard deviation) per gaussian!')
+		return
+
+	y = 0
+	for idx in range(n):
+		amplitude = args[3*idx]
+		center = args[3*idx + 1]
+		sigma = args[3*idx + 2]
+
+		y += gaussian(x,amplitude,center,sigma)
+
+	return y
+
+def voigt(x, gamplitude, gcenter, gsigma, lamplitude,lcenter,lwidth):
+	return (gamplitude*(1/(gsigma*(np.sqrt(2*np.pi))))*(np.exp(-((x-gcenter)**2)/((2*gsigma)**2)))) + ( lamplitude*lwidth**2/((x-lcenter)**2 + lwidth**2) )
+
+def n_voigt(n, x, *args):
+	'''
+	sum of n voigt curves. arguments should be passed in order amplitude_gauss_1, center_gauss_1, width_gauss_1,amplitude_lorentz_1, center_lorentz_1, width_lorentz_1, amplitude_gauss_2...etc
+	'''
+
+	if len(args) != n*6:
+		print('Error: must be six arguments (gaussian amplitude, center, and standard deviation, lorentzian amplitude,center,andwidth) per voigt!')
+		return
+
+	y = 0
+	for idx in range(n):
+		gamplitude = args[3*idx]
+		gcenter = args[3*idx + 1]
+		gsigma = args[3*idx + 2]
+		lamplitude = args[3*idx + 3]
+		lcenter = args[3*idx + 4]
+		lwidth = args[3*idx + 5]
+
+
+		y += voigt(x, gamplitude, gcenter, gsigma, lamplitude, lcenter, lwidth)
+
+	return y
