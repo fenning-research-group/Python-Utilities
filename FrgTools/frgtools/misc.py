@@ -113,14 +113,3 @@ def sendemail(recipient, subject = '', body = ''):
 	except:
 		print('Error encountered when sending email "{0}" to {1}'.format(subject, recipient))
 
-
-### general functional forms
-
-def gaussian(x, a, b, c):
-	"""
-	a = magnitude
-	b = center value
-	c = standard deviation
-	"""
-	return a * np.exp( -(x-b)**2 / (2*c**2))
-
