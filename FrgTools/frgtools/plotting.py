@@ -297,6 +297,9 @@ def directional_arrows(x, y, step = 1, interval = None, ax = None, **kwargs):
         idx1 = idx0+step
         x0, y0 = x[idx0], y[idx0]
         x1, y1 = x[idx1], y[idx1]
+
+        if any(np.isnan([x0,y0,x1,y1])):
+            continue
         xavg, yavg = [(a[idx0]+a[idx1])/2 for a in [x,y]]
         if not is_visible(xavg,yavg):
             continue
