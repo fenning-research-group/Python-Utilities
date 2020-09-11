@@ -151,5 +151,5 @@ def expecteddiffusivity(temperature, material = 'EVA9100'):
 	Given a temperature, calculates the diffusivity of water in EVA9100
 	"""
 
-	diffusivity = 0.001353*np.exp(-0.191*(1/(273.15 + temperature))/(8.617e-5));  #ASU uptake fit 2018-11-27     
+	diffusivity = 0.001353*np.exp(-0.191*(1/(273.15 + temperature))/(8.617e-5))  #ASU uptake fit 2018-11-27     
 	return diffusivity

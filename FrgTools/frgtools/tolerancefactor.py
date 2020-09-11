@@ -18,8 +18,9 @@ def goldschmidt(a, b, x):
 
 	return (r_a+r_x) / (np.sqrt(2)*(r_b+r_x))
 
-def chatham(a, b, x, oxidationstate_a = 1):
+def bartel(a, b, x, oxidationstate_a = 1):
 	"""
+	https://advances.sciencemag.org/content/5/2/eaav0693
 	https://advances.sciencemag.org/content/suppl/2019/02/04/5.2.eaav0693.DC1
 	"""
 	def fsigmoid(x, a, b):
