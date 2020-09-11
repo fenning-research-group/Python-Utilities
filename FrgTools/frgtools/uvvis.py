@@ -26,12 +26,15 @@ def load_lambda(fpath):
 		return np.array(wl), np.array(signal), signalType
 
 	readMe = '.Sample.'
+	ignoreMe = '.sp'
 	rawFids = os.listdir(fpath)
 
 	data = {}
 
 	for f in rawFids:
 		if readMe in f:
+			if f.endswith(ignoreMe):
+				continue
 			path = os.path.join(fpath, f)
 			name = os.path.basename(f).split(readMe)[0]
 			if '.Cycle' in f:

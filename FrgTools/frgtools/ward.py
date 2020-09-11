@@ -14,7 +14,7 @@ def fit_fullspectrum(wavelengths, reflectance, plot = False):
 		reflectance = reflectance / 100
 
 	absSpectrum = -np.log(reflectance)
-	absPeaks, absBaseline = RemoveBaseline(absSpectrum)
+	absPeaks, absBaseline = remove_baseline(absSpectrum)
 
 	eva_idx = np.argmin(np.abs(wavelengths - eva_peak))
 	eva_abs = np.max(absPeaks[eva_idx-5 : eva_idx+5])
