@@ -12,6 +12,18 @@ with open(radiiFilepath, 'r') as f:
 ### Tolerance factor calculations ###
 
 def goldschmidt(a, b, x):
+	"""
+	a,b,x can either be a string ('Cs', 'Br', etc) for a single site species, or a
+	dictionary of species:fraction for mixed sites. ({'Cs':0.5, 'FA':0.5}, etc)
+
+	example:
+
+		tf = tolerancefactor.goldschmidt(
+			a = 'Cs',
+			b = {'Pb': 0.5, 'Sn': 0.5},
+			x = 'Br'
+		)	
+	"""
 	r_a = _parse_radius(a)
 	r_b = _parse_radius(b)
 	r_x = _parse_radius(x)
