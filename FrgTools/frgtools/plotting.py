@@ -40,7 +40,7 @@ def vline(x, ax = None, **kwargs):
     ax.plot([x, x], ylim0, **lineArguments)
     ax.set_ylim(ylim0)
 
-def scalebar(ax = None, scale = 1, **kwargs):
+def scalebar(scale = 1, ax = None, **kwargs):
     """
     Lightweight wrapper around matplotlib_scalebar.scalebar.ScaleBar
     Default positioning and text color (white text on low opacity black background in lower right corner)
@@ -71,7 +71,7 @@ def scalebar(ax = None, scale = 1, **kwargs):
     ax.add_artist(sb)
     return sb
     
-def colorbar(im, ax = None, orientation = 'vertical', **kwargs):
+def colorbar(im, orientation = 'vertical', ax = None, **kwargs):
     if ax is None:
         ax = plt.gca()
 
@@ -90,9 +90,41 @@ def colorbar(im, ax = None, orientation = 'vertical', **kwargs):
 
     return cb
 
+def cornertext(s, location = 'upper right', pad = 0.05, ax = None, **kwargs):
+    if type(pad) is not list:
+        pad = [pad, pad]
+
+    if ax is None:
+        ax = plt.gca()
+
+    annotateArguments = {
+        's':s,
+        'xycoords': 'axes fraction',
+        'xy': [0.5, 0.5],
+        'ha': 'center',
+        'va': 'center'
+    }
+
+    for k, v in kwargs.items():
+        annotateArguments[k] = v 
+
+    if 'upper' in location:
+        annotateArguments['xy'][1] = 1-pad[1]
+        annotateArguments['va'] = 'top'
+    if 'lower' in location:
+        annotateArguments['xy'][1] = pad[1]
+        annotateArguments['va'] = 'bottom'
+    if 'right' in location:
+        annotateArguments['xy'][0] = 1-pad[0]
+        annotateArguments['ha'] = 'right'
+    if 'left' in location:
+        annotateArguments['xy'][0] = pad[0]
+        annotateArguments['ha'] = 'left'
+
+    ax.annotate(**annotateArguments)
 ### Plot Builders
 
-def waterfall(data, ax = None, lognorm = False, ticks = {}, tickoffset = 0, tickwidth = 1, **kwargs):
+def waterfall(data, lognorm = False, ticks = {}, tickoffset = 0, tickwidth = 1, ax = None, **kwargs):
     if ax == None:
         fig, ax = plt.subplots(figsize = (8, 4))
 
@@ -145,7 +177,7 @@ def waterfall(data, ax = None, lognorm = False, ticks = {}, tickoffset = 0, tick
     ax.set_ylim((0, ytop))
     # plt.show()
 
-def categorical_heatmap(x, y, z, ax = None, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean'):
+def categorical_heatmap(x, y, z, xlabel = '', ylabel = '', zlabel = '', title = '', fillvalue = np.nan, multiplevaluehandling = 'mean',ax = None):
     """
     Takes three 1-d inputs (x, y, z) and constructs an x by y heatmap with values z.
     """
