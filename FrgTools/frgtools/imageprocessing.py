@@ -4,6 +4,28 @@ from matplotlib.widgets import Button
 from PIL import Image
 import affine6p
 from skimage.transform import resize as skim_resize
+from 
+
+def adjust_brightness(img, value):
+	'''
+	adjust image brightness on a 0-255 scale
+
+	example:
+		img_brighter = adjust_brightness(img, 25)
+		img_darker = adjust_brightness(img, -20)
+		img_completelyblownout = adjust_brightness(img, 255)
+	'''
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv)
+
+	v += value
+	v[v > 255] = 255
+	v[v < 0] = 0
+
+    final_hsv = cv2.merge((h, s, v))
+    img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
+    return img
+
 ## Affine transformation scripts
 
 def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, **kwargs):
