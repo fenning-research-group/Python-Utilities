@@ -4,7 +4,7 @@ from matplotlib.widgets import Button
 from PIL import Image
 import affine6p
 from skimage.transform import resize as skim_resize
-from 
+import cv2
 
 def adjust_brightness(img, value):
 	'''
@@ -15,16 +15,16 @@ def adjust_brightness(img, value):
 		img_darker = adjust_brightness(img, -20)
 		img_completelyblownout = adjust_brightness(img, 255)
 	'''
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    h, s, v = cv2.split(hsv)
+	hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+	h, s, v = cv2.split(hsv)
 
 	v += value
 	v[v > 255] = 255
 	v[v < 0] = 0
 
-    final_hsv = cv2.merge((h, s, v))
-    img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
-    return img
+	final_hsv = cv2.merge((h, s, v))
+	img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
+	return img
 
 ## Affine transformation scripts
 
@@ -44,15 +44,15 @@ def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcente
 
 	if adjustcenterofrotation:
 		t_translate = np.array([		#move (0,0) to center of image instead of corner
-		    [1, 0, -img_.size[0]/2],
-		    [0, 1, -img_.size[1]/2],
-		    [0,0,1]
+			[1, 0, -img_.size[0]/2],
+			[0, 1, -img_.size[1]/2],
+			[0,0,1]
 		])
 
 		t_translate_back = np.array([	#move (0,0) to back to corner
-		    [1, 0, img_.size[0]/2],
-		    [0, 1, img_.size[1]/2],
-		    [0,0,1]
+			[1, 0, img_.size[0]/2],
+			[0, 1, img_.size[1]/2],
+			[0,0,1]
 		])
 	else:
 		t_translate = np.array([
@@ -71,10 +71,10 @@ def affine_transform(img, T, resample = Image.NEAREST, plot = False, adjustcente
 	T_inv = np.linalg.inv(T_composite)
 
 	img_t = img_.transform(
-	    img_.size,
-	    Image.AFFINE,
-	    data = T_inv.flatten()[:6],
-	    resample = resample,
+		img_.size,
+		Image.AFFINE,
+		data = T_inv.flatten()[:6],
+		resample = resample,
 	)
 	img_t = np.array(img_t)
 	
@@ -210,10 +210,10 @@ class AffineTransformer:
 
 		self.moving_pts = pick_points(img_t, pts = self.num_pts)
 
-	def apply(self, img, resample = Image.NEAREST, plot = False, adjustcenterofrotation = False, resize = None, order = 0, **kwargs):
+	def apply(self, img, resample = Image.NEAREST, plot = False, fill = np.nan, adjustcenterofrotation = False, resize = None, order = 0, **kwargs):
 		# Note: the affine_calculate() call would ideally be in .fit(), but this is a silly workaround that
 		# 		makes the helper play nice with Jupyter notebook. Issue is that the plot is nonblocking in notebook,
-		#		so affine_calculate() gets called before the user has a chane to select points on the moving image.
+		#		so affine_calculate() gets called before the user has a chance to select points on the moving image.
 
 		if resize is None:
 			resize = self.resize_default
@@ -221,20 +221,20 @@ class AffineTransformer:
 		self.T = affine_calculate(self.moving_pts, self.reference_pts)
 
 		if resize:
-			img_t = self._resize(img, order = order) 
+			img_t = self._resize(img, order = order, cval = fill) 
 		else:
 			img_t = img
 		img_t = affine_transform(img_t, self.T, resample = resample, plot = plot, adjustcenterofrotation = adjustcenterofrotation, **kwargs)
 
-		return img_t
+		return img_t[:self.reference_shape[0], :self.reference_shape[1]]
 
-	def _resize(self, img, order = 0):
+	def _resize(self, img, order = 0, **kwargs):
 		xratio = img.shape[1] / self.reference_shape[1]
 		yratio = img.shape[0] / self.reference_shape[0]
 
 		target_shape = np.round(img.shape / np.min([xratio, yratio])).astype(int)
-		img_t = skim_resize(img, target_shape, order = order)
-		return img_t[:self.reference_shape[0], :self.reference_shape[1]]
+		img_t = skim_resize(img, target_shape, order = order, **kwargs)
+		return img_t
 
 
 def pick_points(img, pts = 4, **kwargs):

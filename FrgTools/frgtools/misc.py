@@ -63,7 +63,7 @@ def searchdir(path = '.', find = [], ignore = ['desktop.ini', '.DS_Store'], fids
     fids = []
     return temp
 
-def treeview(d, tabs = 0):
+def treeview(d, tabs = 0, print_last_branch = False):
     '''
     prints the hierarchy of a dictionary of h5 file
     '''
@@ -71,17 +71,17 @@ def treeview(d, tabs = 0):
         printstr = ''
         for t in range(tabs):
             printstr += '\t'
-        printstr += f'{d}'
+        printstr += f'{printme}'
         print(printstr)
         
     try:
-        
         keys = d.keys()
-        print_with_tabs(d, tabs)
         for k in keys:
+            print_with_tabs(k, tabs)
             print_tree(d[k], tabs = tabs+1)
     except:
-        print_with_tabs(d, tabs)
+        if print_last_branch:
+            print_with_tabs(d, tabs)
 
 # load video numpy array
 import cv2
