@@ -32,8 +32,21 @@ def goldschmidt(a, b, x):
 
 def bartel(a, b, x, oxidationstate_a = 1):
 	"""
-	https://advances.sciencemag.org/content/5/2/eaav0693
-	https://advances.sciencemag.org/content/suppl/2019/02/04/5.2.eaav0693.DC1
+	returns tau and the associated probability of perovskite formation, based on:
+		https://advances.sciencemag.org/content/5/2/eaav0693
+		https://advances.sciencemag.org/content/suppl/2019/02/04/5.2.eaav0693.DC1
+
+	
+	a,b,x can either be a string ('Cs', 'Br', etc) for a single site species, or a
+	dictionary of species:fraction for mixed sites. ({'Cs':0.5, 'FA':0.5}, etc)
+
+	example:
+
+		tau, p = tolerancefactor.bartel(
+			a = 'Cs',
+			b = {'Pb': 0.5, 'Sn': 0.5},
+			x = 'Br'
+		)	
 	"""
 	def fsigmoid(x, a, b):
 		return 1.0 / (1.0 + np.exp(-a*(x-b)))
@@ -42,10 +55,12 @@ def bartel(a, b, x, oxidationstate_a = 1):
 	r_b = _parse_radius(b)
 	r_x = _parse_radius(x)
 
-	p_opt = [-1.73194355,  4.26437976] #found by fitting sigmoid to webplotdigitized data from paper
 	tau = (r_x/r_b) - oxidationstate_a*(oxidationstate_a - (r_a/r_b)/np.log(r_a/r_b))
-	
-	return fsigmoid(tau, *p_opt)
+
+	p_opt = [-1.73194355,  4.26437976] #found by fitting sigmoid to webplotdigitized data from paper
+	probability_of_formation = fsigmoid(tau, *p_opt)
+
+	return tau, probability_of_formation
 
 ### Atomic radius handling ###
 
