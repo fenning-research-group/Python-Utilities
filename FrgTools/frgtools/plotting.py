@@ -122,6 +122,31 @@ def cornertext(s, location = 'upper right', pad = 0.05, ax = None, **kwargs):
         annotateArguments['ha'] = 'left'
 
     ax.annotate(**annotateArguments)
+
+def zoom(ax, ratio):
+    '''
+    rescales a plot while maintaining scale
+
+        ax: axis handle to zoom
+        ratio: relative scale desired. value of 1 will do nothing
+    '''
+    xmin0, xmax0 = ax.get_xlim()
+    xspan0 = xmax0 - xmin0
+    ymin0, ymax0 = ax.get_ylim()
+    yspan0 = ymax0 - ymin0
+    
+    xspan1 = xspan0 * ratio
+    dx = (xspan1-xspan0)/2
+    if xmin0 > xmax0:
+        dx *= -1
+    yspan1 = yspan0 * ratio
+    dy = (yspan1-yspan0)/2
+    if ymin0 > ymax0:
+        dy *= -1
+    
+    ax.set_xlim(xmin0-dx, xmax0+dx)
+    ax.set_ylim(ymin0-dy, ymax0+dy)
+
 ### Plot Builders
 
 def waterfall(data, lognorm = False, ticks = {}, tickoffset = 0, tickwidth = 1, ax = None, **kwargs):
