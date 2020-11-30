@@ -7,4 +7,4 @@ The following instructions assume that python 3.x and pip are already installed
   - Open a terminal/command prompt window
     - note: if using Anaconda, use the Anaconda prompt, not OS prompt!
   - Navigate to the FrgTools directory
-  - run `pip install ./frgtools`
+  - run `pip install -e ./frgtools`
