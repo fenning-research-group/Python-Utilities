@@ -102,7 +102,7 @@ def beers(a, pathlength, concentration = 1):
 	Uses Beer-Lambert's law to convert absorbance values to
 	absorption coefficients (alpha)
 
-	A = alpha * path_length * concentration
+	A = alpha * pathlength * concentration
 
 	inputs:
 		a: absorbance
@@ -113,7 +113,7 @@ def beers(a, pathlength, concentration = 1):
 		alpha: absorption coefficient (cm^-1)
 	'''
 
-	return a/(pathlenght*concentration)
+	return a/(pathlength*concentration)
 
 def kubelka_munk(r):
 	'''
