@@ -68,34 +68,33 @@ def load_lambda(fpath):
 			
 	return data
 
-def calc_absorbance(r, t, t_substrate = None):
+def calc_absorbance(r, t):
 	'''
 	given reflectance and transmission measurements, approximates absorbance.
 	Note that this is the most basic approach, different samples may 
 	require different treatment to obtain accurate absorbance values.
 
-	If a substrate transmission is measured, that can be removed to better
-	isolate the absorbance of the sample itself
+	If a substrate r,t is measured, you can approximately remove the substrate
+	absorbance, since absorbance is additive, in the following way:
+
+		A_substrate = calc_absorbance(r_substrate, t_substrate)
+		A_measured = calc_absorbance(r, t)
+		A = A_measured - A_substrate
+
+	inputs:
+		r, t: arrays of reflectance, transmittance data
+	returns:
+		A: absorbance (AU, natural log)
 	'''
 	r = np.asarray(r)
 	t = np.asarray(t)
-	if t_substrate is None:
-		t_substrate = np.ones(r.shape)
-	else:
-		t_substrate = np.asarray(t_substrate)
 
 	if r.max() > 1:
 		r /= 100 #convert percents to fractional values
 	if t.max() > 1:
 		t /= 100
-	if t_substrate.max() > 1:
-		t_substrate /= 100
 
-
-	t /= t_substrate #ignore transmission losses in the substrate
-	A = -np.log(t/(1-r)) #absorbance = -log(I/I0). 
-	
-	return A
+	return -np.log(t/(1-r)) #absorbance = -log(I/I0)
 
 def beers(a, pathlength, concentration = 1):
 	'''
@@ -135,7 +134,7 @@ def kubelka_munk(r):
 	r = np.asarray(r)
 	return (1-r)**2 / (2*r)
 
-def tauc(wl, a, thickness, bandgap_type, wlmin = None, wlmax = None, fit_width = None, fit_threshold = 0.1, plot = False, verbose = False):
+def tauc(wl, a, bandgap_type, wlmin = None, wlmax = None, fit_width = None, fit_threshold = 0.1, plot = False, verbose = False):
 	'''
 	Performs Tauc plotting analysis to determine optical bandgap from absorbance data
 	Plots data in tauc units, then performs linear fits in a moving window to find the
@@ -145,7 +144,7 @@ def tauc(wl, a, thickness, bandgap_type, wlmin = None, wlmax = None, fit_width =
 	inputs
 
 		wl: array of wavelengths (nm)
-		a: absorbance values (A). if you already have the absorption coefficient, set thickness = 1
+		a: absorption coefficient. Absorbance can also be used, a scalar factor here doesnt affect the bandgap approximation
 		thickness: sample thickness (cm)
 		bandgap_type: ['direct', 'indirect']. determines coefficient on tauc value
 
@@ -176,7 +175,6 @@ def tauc(wl, a, thickness, bandgap_type, wlmin = None, wlmax = None, fit_width =
 
 	wl = wl[wlmask]
 	a = np.array(a)[wlmask]
-	alpha = a/thickness #A = alpha*t, calculate absorption coefficient
 
 	if fit_width is None:
 		fit_width = len(wl)//20  #default to 5% of data width
@@ -196,7 +194,7 @@ def tauc(wl, a, thickness, bandgap_type, wlmin = None, wlmax = None, fit_width =
 	nu = c/(wl*1e-9)  			#convert nm to hz
 	ev = 1240/wl     			#convert nm to ev
 
-	taucvalue = (alpha*h*nu) ** (1/n)
+	taucvalue = (a*h*nu) ** (1/n)
 	taucvalue_threshold = taucvalue.max() * fit_threshold
 	best_slope = None
 	best_intercept = None
