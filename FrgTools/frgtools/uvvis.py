@@ -111,6 +111,7 @@ def beers(a, pathlength, concentration = 1):
 	returns:
 		alpha: absorption coefficient (cm^-1)
 	'''
+	a = np.asarray(a)
 
 	return a/(pathlength*concentration)
 
@@ -144,7 +145,7 @@ def tauc(wl, a, bandgap_type, wlmin = None, wlmax = None, fit_width = None, fit_
 	inputs
 
 		wl: array of wavelengths (nm)
-		a: absorption coefficient. Absorbance can also be used, a scalar factor here doesnt affect the bandgap approximation
+		a: absorption coefficient. Absorbance can also be used - while the plot will be stretched in y, a scalar factor here doesnt affect the bandgap approximation
 		thickness: sample thickness (cm)
 		bandgap_type: ['direct', 'indirect']. determines coefficient on tauc value
 
