@@ -90,7 +90,7 @@ def colorbar(im, orientation = 'vertical', ax = None, **kwargs):
 
     return cb
 
-def cornertext(s, location = 'upper right', pad = 0.05, ax = None, **kwargs):
+def cornertext(text, location = 'upper right', pad = 0.05, ax = None, **kwargs):
     if type(pad) is not list:
         pad = [pad, pad]
 
@@ -98,7 +98,7 @@ def cornertext(s, location = 'upper right', pad = 0.05, ax = None, **kwargs):
         ax = plt.gca()
 
     annotateArguments = {
-        's':s,
+        'text':s,
         'xycoords': 'axes fraction',
         'xy': [0.5, 0.5],
         'ha': 'center',
