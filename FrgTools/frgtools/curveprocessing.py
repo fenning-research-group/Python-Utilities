@@ -12,7 +12,7 @@ def remove_baseline(spectrum, sensitivity = 5):
 	Returns the spectrum with baseline removed, as well as the baseline itself.
 	"""
 	def _PeakStripping(spectrum, window):
-		spectrum_smoothed = savgol_filter(spectrum, window, 0)
+		spectrum_smoothed = savgol_filter(spectrum, window, 1)
 		baseline = []
 
 		for s, ss in zip(spectrum, spectrum_smoothed):
