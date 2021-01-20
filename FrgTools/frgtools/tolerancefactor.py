@@ -30,9 +30,15 @@ def ChathamFormability(a, b, x, oxidationstate_a = 1):
 	r_x = _ParseAtomicRadius(x)
 
 	p_opt = [-1.73194355,  4.26437976] #found by fitting sigmoid to webplotdigitized data from paper
+<<<<<<< Updated upstream
 	tau = (r_x/r_b) - oxidationstate_a*(oxidationstate_a - (r_a/r_b)/np.log(r_a/r_b))
 	
 	return fsigmoid(tau, *p_opt)
+=======
+	probability_of_formation = fsigmoid(tau, *p_opt)
+
+	return tau#, probability_of_formation
+>>>>>>> Stashed changes
 
 ### Atomic radius handling ###
 
