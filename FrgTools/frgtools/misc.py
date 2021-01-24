@@ -32,6 +32,9 @@ def listdir(path = '.', find = None, ignore = ['desktop.ini', '.DS_Store'], list
 
 def searchdir(path = '.', find = [], ignore = ['desktop.ini', '.DS_Store'], fids = [], match_directories = False):
     """
+    NOTE - this function is buggy sometimes if ran more than once - fids will carry over across runs.
+            quick fix - explicitly pass "fids = []", will clear old hits.
+
     path: path to directory to be searched
     find: list of substrings used to identify files of interest.
     ignore: list of substrings used to identify files/folders to ignore

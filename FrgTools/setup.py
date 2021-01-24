@@ -8,7 +8,17 @@ setup(
     author_email = 'rishikumar@ucsd.edu',
     install_requires = [
     	'matplotlib-scalebar',
-    	'imreg_dft'
+    	'imreg_dft',
+        'renishawWiRE',
+        'scipy',
+        'matplotlib',
+        'numpy',
+        'opencv-python',
+        'tqdm',
+        'PIL',
+        'skimage',
+        'affine6p',
+        'smtplib'
     	],
     license='MIT',
     long_description=open('./frgtools/README.txt').read(),
