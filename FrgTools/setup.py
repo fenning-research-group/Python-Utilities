@@ -17,7 +17,6 @@ setup(
         'tqdm',
         'scikit-image',
         'affine6p',
-        'smtplib'
     	],
     license='MIT',
     long_description=open('./frgtools/README.txt').read(),
