@@ -15,7 +15,7 @@ setup(
         'numpy',
         'opencv-python',
         'tqdm',
-        'skimage',
+        'scikit-image',
         'affine6p',
         'smtplib'
     	],
