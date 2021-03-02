@@ -98,7 +98,7 @@ def cornertext(text, location = 'upper right', pad = 0.05, ax = None, **kwargs):
         ax = plt.gca()
 
     annotateArguments = {
-        'text':s,
+        'text':text,
         'xycoords': 'axes fraction',
         'xy': [0.5, 0.5],
         'ha': 'center',
