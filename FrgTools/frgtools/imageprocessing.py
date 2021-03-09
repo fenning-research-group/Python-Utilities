@@ -131,6 +131,7 @@ class __ImgPicker():
 	def __init__(self, img, pts, markersize = 0.3, **kwargs):
 		self.numPoints = pts
 		self.currentPoint = 0
+		self.repeating = False
 		self.finished = False
 		self.markersize = markersize
 
@@ -142,21 +143,27 @@ class __ImgPicker():
 		self.stopButton = Button(self.buttonAx, 'Done')
 		self.stopButton.on_clicked(self.setFinished)
 
-		self.pickedPoints = [None for x in range(self.numPoints)]
-		self.pointArtists = [None for x in range(self.numPoints)]
-		self.pointText = [None for x in range(self.numPoints)]
+		self.pickedPoints = []
+		self.pointArtists = []
+		self.pointText = []
 
 		plt.show(block = True)        
 	
 	def setFinished(self, event):
 		self.finished = True
+		if self.numPoints != np.inf:
+			while len(self.pickedPoints) < self.numPoints:
+				self.pickedPoints.append([np.nan, np.nan])
 		plt.close(self.fig)
 	
 	def onpick(self, event):
 		if not self.finished:
 			mevt = event.mouseevent
-			idx = self.currentPoint % self.numPoints
-			self.currentPoint += 1
+			idx = self.currentPoint
+			if not self.repeating: #if this is our first pass through the points, add a slot in the list for the point
+				self.pickedPoints.append(None)
+				self.pointArtists.append(None)
+				self.pointText.append(None)
 
 			x = mevt.xdata
 			y = mevt.ydata
@@ -175,6 +182,12 @@ class __ImgPicker():
 
 			self.fig.canvas.draw()
 			self.fig.canvas.flush_events()
+
+			self.currentPoint += 1
+			if self.currentPoint >= self.numPoints: 
+				self.currentPoint = 0
+				self.repeating = True
+
 
 class AffineTransformer:
 	'''
@@ -241,6 +254,9 @@ def pick_points(img, pts = 4, **kwargs):
 	"""
 	Given an image and a number of points, allows the user to interactively select points on the image.
 	These points are returned when the "Done" button is pressed. Useful to generate inputs for AffineCalculate.
+	If <pts are clicked, remaining points will be filled with [np.nan, np.nan]
+	
+	Note - for infinite points, you can set pts = np.inf, and only the number of clicked points will be returned
 	"""
 	imgpicker = __ImgPicker(img, pts, **kwargs)
 	return imgpicker.pickedPoints
