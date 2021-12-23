@@ -162,7 +162,6 @@ def expecteddiffusivity(temperature, material = 'EVA9100'):
 #bifacial fitfull uses rubberband method to remove baseline, then fits gaussian to the baseline removed spectra
 #returns the baseline corrected absorbance, the baseline, and gaussian fitted curves
 
-from scipy.spatial import ConvexHull
 from lmfit.models import GaussianModel
 from scipy import stats
 import pandas as pd
