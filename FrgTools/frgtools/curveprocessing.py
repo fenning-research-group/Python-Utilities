@@ -202,3 +202,15 @@ def multiple_voigt(n):
     sum of n voigt curves. arguments should be passed in order amplitude_gauss_1, center_gauss_1, width_gauss_1,amplitude_lorentz_1, center_lorentz_1, width_lorentz_1, amplitude_gauss_2...etc
     """
     return partial(__n_voigt_generator, n)
+
+def rubberband(x, y):
+        # Find the convex hull
+        v = ConvexHull(np.array(list(zip(x, y)))).vertices
+
+        # Rotate convex hull vertices until they start from the lowest one
+        v = np.roll(v, -v.argmin())
+        # Leave only the ascending part
+        v = v[:v.argmax()]
+
+        # Create baseline using linear interpolation between vertices
+        return np.interp(x, x[v], y[v])
