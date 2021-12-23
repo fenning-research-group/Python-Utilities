@@ -166,23 +166,11 @@ from scipy.spatial import ConvexHull
 from lmfit.models import GaussianModel
 from scipy import stats
 import pandas as pd
+from .curveprocessing import rubberband
 
 def bifacial_fitfull(wavelengths, reflectance, polymer_type, sampleName, plot = False):
     
-    ####step 1, remove baseline using rubber band method
-    def rubberband(x, y):
-        # Find the convex hull
-        v = ConvexHull(np.array(list(zip(x, y)))).vertices
-
-        # Rotate convex hull vertices until they start from the lowest one
-        v = np.roll(v, -v.argmin())
-        # Leave only the ascending part
-        v = v[:v.argmax()]
-
-        # Create baseline using linear interpolation between vertices
-        return np.interp(x, x[v], y[v])
-        
-     
+    ####step 1, remove baseline using rubber band method, added to frgtools.curveprocessing
     wl = np.array(wavelengths)
     raw_absorbance = np.log(1/np.array(reflectance))
     baseline = rubberband(wl,raw_absorbance)
