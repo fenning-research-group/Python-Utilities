@@ -2,6 +2,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy import interpolate
+
 
 def load_tracer(fpath):
 	"""
@@ -377,3 +379,69 @@ def _Light1Diode(x, jo1, rs, rsh, jl):
 	j = jl - d1 - (v+j_meas*rs)/rsh
 	
 	return j
+
+def interpolate_func(v, i, pct_change_allowed=0.1):
+    """Get interpolation function.
+
+    Args:
+        pct_change_allowed (float): smoothing parameter - only allow points with less than this amount of percent
+            change between adjacent points
+        spline_kwargs (dict): keywords for spline (see scipy.interpolate.splrep)
+    """
+    pct_change = np.abs(np.diff(i)) / i[:-1]
+    pct_change = np.insert(pct_change, 0, 0)
+    v = v[pct_change < pct_change_allowed]
+    i = i[pct_change < pct_change_allowed]
+    tck = interpolate.splrep(v, i, s=0)
+    return tck
+
+def smooth(v, i, nmpts= 3000):
+    # sorting IV curve by voltage (needed for interpolation)
+    x = v # not smooth
+    y = i # not smooth
+
+    xy = np.column_stack((x, y))
+    xy = xy[xy[:, 0].argsort()]
+    x = xy[:, 0]
+    y = xy[:, 1]
+
+    v_smooth = np.linspace(x[0], x[-1], nmpts)
+
+    tck = interpolate_func(x, y, pct_change_allowed=.1)#, spline_kwargs={'s': 0.025})
+
+    i_smooth = interpolate.splev(v_smooth, tck, der=0)
+    
+    return v_smooth, i_smooth
+
+def smooth_light_fit(v, i, area=.07):
+# 	Deniz Cakan 20220822
+# 	Extracts the solar cell device performance parameters from the IV curve
+    
+    v, i = smooth(v, i)
+    # maximum power point
+    pmax = np.max((v * i))
+    mpp_idx = np.argmax((v * i))
+    vpmax = v[mpp_idx]
+    ipmax = i[mpp_idx]
+    j = i/area/.001
+
+
+    voc = np.interp(0, i, v)
+    isc = np.interp(0, v, -i)
+    jsc = np.interp(0, v, -j)
+
+
+    p = -np.multiply(v, j)
+    pce = np.max(p)
+    ff = (pce) / (jsc * voc) * 100
+
+    pce = voc*jsc*ff/100
+    params = {
+                'p':p,
+                'pce': pce,
+                'vmpp': vpmax,
+                'voc': voc,
+                'isc': isc,
+                'jsc': jsc,
+                'ff': ff}
+    return params
