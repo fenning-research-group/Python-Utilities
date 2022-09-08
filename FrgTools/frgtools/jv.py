@@ -407,7 +407,7 @@ def smooth(v, i, nmpts= 3000):
 
     v_smooth = np.linspace(x[0], x[-1], nmpts)
 
-    tck = interpolate_func(x, y, pct_change_allowed=.1)#, spline_kwargs={'s': 0.025})
+    tck = interpolate_func(x, y, pct_change_allowed=2)#, spline_kwargs={'s': 0.025})
 
     i_smooth = interpolate.splev(v_smooth, tck, der=0)
     
