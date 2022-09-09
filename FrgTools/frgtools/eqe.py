@@ -117,19 +117,22 @@ class EQE:
         print('Resetting wavelength to 532 nm for visibility...')
         self.m.wavelength = 532
 
+        energies, qe, qe_error = self._calc_eqe(lia_voltages, lia_voltage_stds)
+
+        print(energies.shape, qe.shape, qe_error.shape)
+
         df = pd.DataFrame(
             {
                 'wls': self.wls,
+                'ev' : 1239.84193/self.wls,
                 'lia_voltages': lia_voltages,
                 'lia_voltage_stds': lia_voltage_stds,
+                'eqe' : qe,
+                'eqe_error' : qe_error
             }
         )
 
-        energies, qe, qe_error = self._calc_eqe(df)
-
-        df['ev'] = energies,
-        df['eqe'] = qe, 
-        df['eqe_error'] = qe_error
+        df.to_csv(sample_name, index = False)
 
         plt.figure(figsize=(4, 3), dpi=360)
         plt.plot(1239.84193 / energies, qe*100, label="EQE", linewidth=0.7, color="black")
@@ -151,7 +154,7 @@ class EQE:
     def _nm_to_eV(self, wavelength):
         # convert wavelengths to eV
         hc = 1239.84193  # in eV*nm
-        eV = hc / (wavelength)  # wavelength in nm converted to meters
+        eV = hc / np.array(wavelength)  # wavelength in nm converted to meters
         return eV
 
     def _get_n_electrons(self, voltage, resistance=50):
@@ -172,7 +175,7 @@ class EQE:
         eqe_error = np.sqrt((n_electrons_error) ** 2 + (power_error) ** 2)
         return eqe_error
 
-    def _calc_eqe(self, data):
+    def _calc_eqe(self, lia_v, lia_std):
 
         wls = self.wls
         energies = self._nm_to_eV(wls)
@@ -183,8 +186,8 @@ class EQE:
         n_photons = self._get_n_photons(wls, ref_powers)
         n_photons_error = self._error_fraction(ref_powers, ref_stds)
 
-        n_electrons = self._get_n_electrons(data['lia_voltages'])
-        n_electrons_error = self._error_fraction(data['lia_voltages'], data['lia_voltage_stds'])
+        n_electrons = self._get_n_electrons(lia_v)
+        n_electrons_error = self._error_fraction(lia_v, lia_std])
 
         eqe = n_electrons / n_photons
         eqe_error = eqe * self._get_eqe_error(n_electrons_error, n_photons_error)
