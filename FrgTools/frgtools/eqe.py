@@ -117,7 +117,19 @@ class EQE:
         print('Resetting wavelength to 532 nm for visibility...')
         self.m.wavelength = 532
 
+        df = pd.DataFrame(
+            {
+                'wls': self.wls,
+                'ev' : energies,
+                'lia_voltages': lia_voltages,
+                'lia_voltage_stds': lia_voltage_stds,
+            }
+        )
+
         energies, qe, qe_error = self._calc_eqe(df)
+
+        df['eqe'] = qe, 
+        df['eqe_error'] = qe_error
 
         plt.figure(figsize=(4, 3), dpi=360)
         plt.plot(1239.84193 / energies, qe*100, label="EQE", linewidth=0.7, color="black")
@@ -127,20 +139,7 @@ class EQE:
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("EQE (%)")
 
-        df = pd.DataFrame(
-            {
-                'wls': self.wls,
-                'ev' : energies,
-                'lia_voltages': lia_voltages,
-                'lia_voltage_stds': lia_voltage_stds,
-                'eqe' : qe, 
-                'eqe_error' : qe_error
-            }
-        )
-
         df.to_csv(sample_name, index = False)
-
-        return df
 
     def _get_n_photons(self, wavelength, power):
         # get the number of photons from the power meter
