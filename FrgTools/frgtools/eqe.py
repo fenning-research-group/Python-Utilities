@@ -158,6 +158,7 @@ class EQE:
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("EQE (%)")
 
+        self.data[sample_name] = df
         df.to_csv(sample_name, index = False)
 
     def _get_n_photons(self, wavelength, power):
