@@ -120,7 +120,6 @@ class EQE:
         df = pd.DataFrame(
             {
                 'wls': self.wls,
-                'ev' : energies,
                 'lia_voltages': lia_voltages,
                 'lia_voltage_stds': lia_voltage_stds,
             }
@@ -128,6 +127,7 @@ class EQE:
 
         energies, qe, qe_error = self._calc_eqe(df)
 
+        df['ev'] = energies,
         df['eqe'] = qe, 
         df['eqe_error'] = qe_error
 
