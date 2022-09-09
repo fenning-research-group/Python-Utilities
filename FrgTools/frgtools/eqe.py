@@ -9,18 +9,26 @@ import matplotlib.pyplot as plt
 from pymeasure.instruments.srs import SR830
 
 class EQE:
-
+    """
+    This code is for carrying out EQE measurements in SERF156
+    """
     def __init__(self) -> None:
+
         self.connect()
         self.set_wls()
         self.lightsource_correction()
         self.data = {}
-        self.lia.time_constant = 0.3
+        self.lia.time_constant = 0.3    #shorter time-constants could be used, but 300ms gives great data
         print('Ready to take EQE.')
-        self.m.wavelength = 532
+        self.m.wavelength = 532         # make the light visible to align sample
 
     def connect(self):
     
+        """
+        This code connects to and configures the following instruments for measurement:
+        Lockin amp, calibrated photodiode, and the monochromator.
+        """
+
         self.lia = SR830('GPIB0::8::INSTR')
         input("Lock-in amplifier object initiated.\nPress Enter to continue...")
 
@@ -40,25 +48,31 @@ class EQE:
         input("PM100 (Power Meter) configured for power.\nPress Enter to continue... \n")
 
     def set_wls(self):
-
+        """
+        Creates a np.array of the wavelengths deisred and assigns them to the wls attribute
+        """
         start = int(input("Start Wavelength = "))
         stop = int(input("Stop Wavelength = "))
         step = int(input("Interval = "))
          
         self.wls = np.arange(start, stop, step)
 
-        print(f'The wavelengths that will be used are:\n{self.wls}')
+        print(f'\nThe wavelengths that will be used are:\n{self.wls}')
 
     def lightsource_correction(self, sample_name = 'Lamp_Power.csv'):
-        
-        print('\nSetting wavelength to 532 nm for ease of visibility...')
+        """
+        Take readings of the power hitting the sample using the calibrated photodiode.
+        """
+        print('\nSetting wavelength to 532 nm for ease of visibility...\n')
         self.m.wavelength = 532
+
         input('Please place calibrated Si photodiode centered on spot. \nPress Enter when in place \n')
         input('Please ensure chopper wheel is turned off and beam is unobstructed. \nPress Enter when done \n')
         input('Eliminate stray light in room. \nPress Enter to begin the lightsource correction \n')
 
-        N_AVG = 20
-        self.pm.sense.average.count = 200
+        N_AVG = 20     # number of times to query the photodiode
+        self.pm.sense.average.count = 200    # number of times the photodiode interally averages readings per external query
+                                             # each reading is approx. 3ms, so 200 readings ~600ms
 
         pm_power = []
         pm_stds = []
@@ -66,25 +80,25 @@ class EQE:
         self.m.wavelength = self.wls[0]
         self.m.open_shutter()
 
-        for wl in tqdm(self.wls):
+        for wl in tqdm(self.wls, desc = 'Measuring lamp power'):
             self.m.wavelength = wl
             self.pm.sense.correction.wavelength = wl
             sleep(0.1)
             temp = []
             for i in range(N_AVG):
-            	temp.append(self.pm.read)
-                
+                temp.append(self.pm.read)
+
             temp = np.array(temp)
 
             pm_power.append(temp.mean())
             pm_stds.append(temp.std())
 
         df = pd.DataFrame(
-        	{
-    			'wavelength': self.wls,
-    			'pm_power': pm_power,
-    			'pm_stds' : pm_stds
-			}
+            {
+                'wavelength': self.wls,
+                'pm_power': pm_power,
+                'pm_stds' : pm_stds
+            }
         )
         
         self.source_correction = df
@@ -93,23 +107,27 @@ class EQE:
 
     def take_EQE(self, sample_name):
 
-        N_AVERAGES = 20
+        """
+        The function that talks to everything and takes EQE
+        """
+
+        N_AVERAGES = 20    # number of times to query the lockin
 
         lia_voltages = []
         lia_voltage_stds = []
 
         tc = self.lia.time_constant
 
-        for wl in tqdm(self.wls):
+        for wl in tqdm(self.wls, desc = 'Taking EQE'):
             temp_lia = []
-            self.m.wavelength = wl
-            self.pm.sense.correction.wavelength = wl
+            self.m.wavelength = wl     # change the wavelength on the mono
+            self.pm.sense.correction.wavelength = wl   # change the photodiode wavelength. a correction for responsivity.
 
-            sleep(5)
+            sleep(5) # let the lockin...uh...lock in.
 
-            for i in range(N_AVERAGES):
+            for i in range(N_AVERAGES):   #average over 20 queries
                 temp_lia.append(self.lia.magnitude)
-                sleep(tc)
+                sleep(tc)  # put one tc between the queries. this is an attempt to avoid sampling faster than the output updates
 
             lia_voltages.append(np.mean(temp_lia))
             lia_voltage_stds.append(np.std(temp_lia))
@@ -118,8 +136,6 @@ class EQE:
         self.m.wavelength = 532
 
         energies, qe, qe_error = self._calc_eqe(lia_voltages, lia_voltage_stds)
-
-        print(energies.shape, qe.shape, qe_error.shape)
 
         df = pd.DataFrame(
             {
@@ -186,8 +202,8 @@ class EQE:
         n_photons = self._get_n_photons(wls, ref_powers)
         n_photons_error = self._error_fraction(ref_powers, ref_stds)
 
-        n_electrons = self._get_n_electrons(lia_v)
-        n_electrons_error = self._error_fraction(lia_v, lia_std])
+        n_electrons = self._get_n_electrons(np.array(lia_v))
+        n_electrons_error = self._error_fraction(np.array(lia_v), np.array(lia_std))
 
         eqe = n_electrons / n_photons
         eqe_error = eqe * self._get_eqe_error(n_electrons_error, n_photons_error)
