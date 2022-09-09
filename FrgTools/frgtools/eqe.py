@@ -1,15 +1,14 @@
+import visa
+from time import sleep
+import ThorlabsPM100 as tl
+from  frghardware.components import mono
+from tqdm import tqdm
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from pymeasure.instruments.srs import SR830
 
 class EQE:
-
-    import visa
-    from time import sleep
-    import ThorlabsPM100 as tl
-    from  frghardware.components import mono
-    from tqdm import tqdm
-    import numpy as np
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    from pymeasure.instruments.srs import SR830
 
     def __init__(self) -> None:
         self.connect()
