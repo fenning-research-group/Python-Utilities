@@ -30,7 +30,7 @@ class EQE:
         """
 
         self.lia = SR830('GPIB0::8::INSTR')
-        input("Lock-in amplifier object initiated.\nPress Enter to continue...")
+        input("Lock-in amplifier object initiated.\nPress Enter to continue...\n")
 
         self.m = mono.Mono()
         input("Mono object initiated. \nPress Enter to continue... \n")
@@ -55,7 +55,7 @@ class EQE:
         stop = int(input("Stop Wavelength = "))
         step = int(input("Interval = "))
          
-        self.wls = np.arange(start, stop, step)
+        self.wls = np.arange(start, stop+step, step)
 
         print(f'\nThe wavelengths that will be used are:\n{self.wls}')
 
@@ -67,7 +67,9 @@ class EQE:
         self.m.wavelength = 532
 
         input('Please place calibrated Si photodiode centered on spot. \nPress Enter when in place \n')
-        input('Please ensure chopper wheel is turned off and beam is unobstructed. \nPress Enter when done \n')
+        input('Please ensure chopper wheel is turned ON and beam is unobstructed. \nPress Enter when done \n')
+        # It acutally became clear that the lightsource correction needed to be taken wtih the chopper wheel on
+        # This was done by taking EQE on the reference cell and integrating against AM1.5G
         input('Eliminate stray light in room. \nPress Enter to begin the lightsource correction \n')
 
         N_AVG = 20     # number of times to query the photodiode
@@ -121,7 +123,6 @@ class EQE:
         for wl in tqdm(self.wls, desc = 'Taking EQE'):
             temp_lia = []
             self.m.wavelength = wl     # change the wavelength on the mono
-            self.pm.sense.correction.wavelength = wl   # change the photodiode wavelength. a correction for responsivity.
 
             sleep(5) # let the lockin...uh...lock in.
 
