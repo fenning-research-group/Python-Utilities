@@ -632,9 +632,9 @@ def calculate_jv_parameters(v=np.array, j=np.array):
 
 def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     # sample name must be recorded in the following format: 's{sample_number}_{rescan_number}'
+    rootdir = rootdir
     dark = os.path.join(rootdir, "dark")
     light = os.path.join(rootdir, "light")
-    longjv = os.path.join(rootdir, "long_JV")
     reference = os.path.join(rootdir, "ref")
 
     fids = []
@@ -712,44 +712,44 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
         df["area"][n] = area
         try:
             df["voc"][n] = np.round(
-                jv.calculate_jv_parameters(
+                calculate_jv_parameters(
                     df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
                 )["voc"]
                 * 1000,
                 1,
             )
             df["jsc"][n] = np.round(
-                jv.calculate_jv_parameters(
+                calculate_jv_parameters(
                     df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
                 )["jsc"],
                 2,
             )
             df["pce"][n] = np.round(
-                jv.calculate_jv_parameters(
+                calculate_jv_parameters(
                     df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
                 )["pce"],
                 2,
             )
             df["ff"][n] = np.round(
-                jv.calculate_jv_parameters(
+                calculate_jv_parameters(
                     df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
                 )["ff"],
                 2,
             )
             df["rsh"][n] = np.round(
-                jv.calculate_jv_parameters(
+                calculate_jv_parameters(
                     df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
                 )["rsh"],
                 3,
             )
             df["rs"][n] = np.round(
-                jv.calculate_jv_parameters(
+                calculate_jv_parameters(
                     df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
                 )["rs"],
                 4,
             )
             df["rch"][n] = np.round(
-                jv.calculate_jv_parameters(
+                calculate_jv_parameters(
                     df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
                 )["rch"],
                 4,
