@@ -624,3 +624,143 @@ def calculate_jv_parameters(v=np.array, j=np.array):
     }
 
     return returndict
+
+def jv_metrics_pkl(rootdir=str, batch=str, area=.07, pce_cutoff=3):
+    # sample name must be recorded in the following format: 's{sample_number}_{rescan_number}'
+    dark = os.path.join(rootdir, 'dark')
+    light = os.path.join(rootdir, 'light')
+    longjv = os.path.join(rootdir, 'long_JV')
+    reference = os.path.join(rootdir, 'ref')
+    
+    fids = []
+    for f in frgm.listdir(light, display = False):
+        if 'control' in f and '_rgb' not in f:
+            continue
+        fids.append(f)
+    fids = natsorted(fids)
+    # print(len(fids))
+    
+    
+    data = {}
+    internal = {}
+    internal['name'] = []
+    internal["direction"] = []
+    internal['repeat'] = []
+
+
+    data['p'] = []
+    data['current_measured'] = []
+
+    data['voltage_measured'] = []
+    data['voltage_setpoint'] = []
+
+    area = .07
+    sim_correction_factor = 1.00
+
+    for n in range(len(fids)):
+        internal['name'].append(os.path.basename(fids[n])[:-4].split('_')[0].split('s')[1])
+        internal['repeat'].append(os.path.basename(fids[n])[:-4].split('_')[1])
+        internal['direction'].append(os.path.basename(fids[n])[:-4].split("_")[2])
+
+        df_single = pd.read_csv(fids[n], header=0)
+        voltage_setpoint = np.asarray(df_single['Voltage (V)'])
+        current_measured = np.asarray(df_single['Current (A)'])*sim_correction_factor
+
+        measured_voltage = np.asarray(df_single['Measured Voltage (V)'])
+
+
+        
+        data['voltage_measured'].append(measured_voltage)
+        data['current_measured'].append(current_measured)
+    #     data['current_density'].append(current_density)
+        data['voltage_setpoint'].append(voltage_setpoint)
+        data['p'].append(-measured_voltage*current_measured)
+        
+    df = pd.DataFrame(data)
+
+    df['voc'] = np.nan
+    df['jsc'] = np.nan
+    df['pce'] = np.nan
+    df['ff'] = np.nan
+    df['rsh'] = np.nan
+    df['rs'] = np.nan
+    df['rch'] = np.nan
+
+    df['current_measured_flipped'] = np.array
+
+    df['current_measured_flipped'] = -1*df['current_measured']
+
+    df.insert(0, 'name', internal['name'])
+    df.insert(1, 'repeat', internal['repeat'])
+    df.insert(2, 'direction', internal['direction'])
+
+
+    df['area'] = np.nan
+    
+# rch doesnt work with reverse curves currently
+    df['voltage_measured_temp'] = df['voltage_measured']
+    df['current_measured_temp'] = df['current_measured']
+    for i in range(len(df)):
+        if df['direction'][i] == 'rev':
+            df['voltage_measured'][i] = df['voltage_measured'][i][::-1]
+            df['current_measured'][i] = df['current_measured'][i][::-1]
+
+    for n in range(len(df)):
+
+        df['area'][n] = area
+        try:
+            df['voc'][n] = np.round(jv.calculate_jv_parameters(df['voltage_measured'][n], -df['current_measured'][n]/area*1e3)['voc']*1000,1)
+            df['jsc'][n] = np.round(jv.calculate_jv_parameters(df['voltage_measured'][n], -df['current_measured'][n]/area*1e3)['jsc'],2)
+            df['pce'][n] = np.round(jv.calculate_jv_parameters(df['voltage_measured'][n], -df['current_measured'][n]/area*1e3)['pce'],2)
+            df['ff'][n] = np.round(jv.calculate_jv_parameters(df['voltage_measured'][n], -df['current_measured'][n]/area*1e3)['ff'],2)
+            df['rsh'][n] = np.round(jv.calculate_jv_parameters(df['voltage_measured'][n], -df['current_measured'][n]/area*1e3)['rsh'],3)
+            df['rs'][n] = np.round(jv.calculate_jv_parameters(df['voltage_measured'][n], -df['current_measured'][n]/area*1e3)['rs'],4)
+            df['rch'][n] = np.round(jv.calculate_jv_parameters(df['voltage_measured'][n], -df['current_measured'][n]/area*1e3)['rch'],4)
+
+            
+        except:
+            pass
+    df['voltage_measured'] = df['voltage_measured_temp']
+    df['current_measured'] = df['current_measured_temp']
+
+
+    df = df.sort_values(by=['pce'],  ascending=False)
+    # df = df.dropna()
+    df = df[~(df['pce'] <= pce_cutoff)]  
+    # df = df[~(df['pce'] <= 3)]  
+    df = df[~(df['ff'] >= 95)]  
+    # df = df[~(df['ff'] <= 70)]  
+
+    # df = df[~(df['voc'] >= 1.3*1e3)]
+    # df = df[~(df['voc'] <= 0.7*1e3)]
+
+
+    df = df.reset_index(drop=True)
+    
+    
+    # df
+    
+    df['PASCAL_ID'] = ''
+    df['PASCAL_ID'] = df['name'].astype(int)
+    
+    
+    #repeats
+
+    df_filter = df
+
+    Filter_1 = '0'
+
+
+    df_filter1 = df_filter[df_filter.repeat.str.contains(Filter_1)]
+    df_filter3 = df_filter1.reset_index(drop=True)
+
+    df_export = df_filter3[['PASCAL_ID', 'direction', 'pce', 'ff', 'voc', 'jsc', 'rsh', 'rs', 'rch']]
+
+    TodaysDate = time.strftime("%Y%m%d")
+    fp = "JV_pkl"
+    if not os.path.exists(fp):
+        os.mkdir(fp)
+    os.chdir(fp)
+    df_export.to_pickle(f'{TodaysDate}_{batch}_JV.pkl')
+    os.chdir("..")
+    return df_filter3
