@@ -7,6 +7,7 @@ import math
 import frgtools.misc as frgm
 from natsort import natsorted
 import time
+import pandas as pd
 
 
 def load_tracer(fpath):
