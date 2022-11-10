@@ -798,3 +798,109 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     df_export.to_pickle(f"{TodaysDate}_{batch}_JV.pkl")
     os.chdir("..")
     return df_filter3
+
+
+def boxplot_jv(
+    data,
+    xvar=None,
+    pce_lim=None,
+    ff_lim=None,
+    voc_lim=None,
+    jsc_lim=None,
+    rsh_lim=None,
+    rs_lim=None,
+):
+    """
+    takes a dataframe and plots a boxplot of the JV parameters
+    one of the columns must be the direction of the scan
+    so 2 rows per device (fwd and rev)
+
+
+    """
+
+    data = data
+    data["all"] = "all"
+    if xvar == None:
+        xvar = "all"
+
+    horiz = 3
+    vert = 2
+    embiggen = 3
+    q = 0
+
+    y_var_list = ["pce", "jsc", "ff", "rsh", "voc", "rs"]
+    fig, ax = plt.subplots(
+        vert,
+        horiz,
+        figsize=(horiz * embiggen, vert * embiggen),
+        constrained_layout=True,
+    )
+
+    for k in range(horiz):
+        for n in range(vert):
+            y_var = y_var_list[q]
+
+            ax[n, k] = sns.boxplot(
+                x=xvar,
+                y=y_var,
+                data=data,
+                hue=data["direction"],
+                showfliers=False,
+                ax=ax[n, k],
+            )
+            ax[n, k].get_legend().remove()
+
+            ax[n, k] = sns.stripplot(
+                x=xvar,
+                y=y_var,
+                data=data,
+                hue=data["direction"],
+                size=3,
+                linewidth=0.2,
+                ax=ax[n, k],
+            )
+            ax[n, k].get_legend().remove()
+
+            if xvar == "all":
+                ax[n, k].set_xlabel("")
+
+            if y_var == "pce":
+                y_axis_label = "Power Conversion Effiency %"
+                ax[n, k].set_ylabel(y_axis_label)
+                if pce_lim:
+                    ax[n, k].set(ylim=(pce_lim[0], pce_lim[1]))
+            if y_var == "jsc":
+                y_axis_label = "J$_{SC}$ mA/cm$^2$"
+                ax[n, k].set_ylabel(y_axis_label)
+                if jsc_lim:
+                    ax[n, k].set(ylim=(jsc_lim[0], jsc_lim[1]))
+
+            if y_var == "voc":
+                y_axis_label = "V$_{OC}$ mV"
+                ax[n, k].set_ylabel(y_axis_label)
+                if voc_lim:
+                    ax[n, k].set(ylim=(voc_lim[0], voc_lim[1]))
+
+            if y_var == "ff":
+                y_axis_label = "Fill Factor %"
+                ax[n, k].set_ylabel(y_axis_label)
+                if ff_lim:
+                    ax[n, k].set(ylim=(ff_lim[0], ff_lim[1]))
+
+            if y_var == "rsh":
+                y_axis_label = "Shunt Resistance Ω/cm$^2$"
+                ax[n, k].set_ylabel(y_axis_label)
+                if rsh_lim:
+                    ax[n, k].set(ylim=(rsh_lim[0], rsh_lim[1]))
+
+            if y_var == "rs":
+                y_axis_label = "Series Resistance Ω/cm$^2$"
+                ax[n, k].set_ylabel(y_axis_label)
+                if rs_lim:
+                    ax[n, k].set(ylim=(rs_lim[0], rs_lim[1]))
+
+            # if y_var == 'rch':
+            #     ax[n, k].set_ylabel(y_axis_label)
+            #     y_axis_label = 'Characteristic Resistance Ω/cm$^2$'
+            q += 1
+    plt.show()
