@@ -817,7 +817,6 @@ def boxplot_jv(
 
 
     """
-
     data = data
     data["all"] = "all"
     if xvar == None:
@@ -858,6 +857,7 @@ def boxplot_jv(
                 size=3,
                 linewidth=0.2,
                 ax=ax[n, k],
+                dodge=True,
             )
             ax[n, k].get_legend().remove()
 
