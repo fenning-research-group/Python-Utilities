@@ -8,6 +8,8 @@ import frgtools.misc as frgm
 from natsort import natsorted
 import time
 import pandas as pd
+import glob
+import seaborn as sns
 
 
 def load_tracer(fpath):
@@ -539,7 +541,7 @@ def calculate_jv_parameters(v=np.array, j=np.array):
     Returns:
             dict: dictionary of parameter values over time
     """
-
+    v = v
     derivative_v_step = 0.1
     p = v * j
 
@@ -587,7 +589,7 @@ def calculate_jv_parameters(v=np.array, j=np.array):
         v1 = v[pmaxloc - math.floor(v_iter / 2)]
         v2 = v[pmaxloc + math.floor(v_iter / 2)]
         if j1 != j2 and v1 != v2:
-            m = (j2 - j1) / (v2 - v1)
+            m = (j2 - j1) / ((v2 - v1))
             rch = float(abs(1 / m))
         else:
             rch = np.nan
@@ -619,8 +621,8 @@ def calculate_jv_parameters(v=np.array, j=np.array):
         "jsc": jsc,
         "voc": voc,
         "ff": ff,
-        "rsh": rsh,
-        "rs": rs,
+        "rsh": rsh * 1e2,
+        "rs": rs * 1e2,
         "rch": rch,
         "jmp": jmp,
         "vmp": vmp,
@@ -637,12 +639,12 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     light = os.path.join(rootdir, "light")
     reference = os.path.join(rootdir, "ref")
 
-    fids = []
-    for f in frgm.listdir(light, display=False):
-        if "control" in f and "_rgb" not in f:
-            continue
-        fids.append(f)
-    fids = natsorted(fids)
+    # fids = []
+    # for f in frgm.listdir(light, display=False):
+    #     if "control" in f and "_rgb" not in f:
+    #         continue
+    #     fids.append(f)
+    fids = natsorted(glob.glob(light + "/*.csv"))
     # print(len(fids))
 
     data = {}
@@ -661,11 +663,11 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     sim_correction_factor = 1.00
 
     for n in range(len(fids)):
-        internal["name"].append(
-            os.path.basename(fids[n])[:-4].split("_")[0].split("s")[1]
-        )
-        internal["repeat"].append(os.path.basename(fids[n])[:-4].split("_")[1])
-        internal["direction"].append(os.path.basename(fids[n])[:-4].split("_")[2])
+        internal["name"].append(os.path.basename(fids[n])[:-4].split("_")[0])
+        if os.path.basename(fids[n])[:-4].split("_")[2] == "":
+            repeat = "0"
+        internal["repeat"].append(repeat)
+        internal["direction"].append(os.path.basename(fids[n])[:-4].split("_")[3])
 
         df_single = pd.read_csv(fids[n], header=0)
         voltage_setpoint = np.asarray(df_single["Voltage (V)"])
@@ -738,7 +740,8 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
             )
             df["rsh"][n] = np.round(
                 calculate_jv_parameters(
-                    df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
+                    df["voltage_measured"][n],
+                    -df["current_measured"][n] / area * 1e3,
                 )["rsh"],
                 3,
             )
@@ -750,7 +753,8 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
             )
             df["rch"][n] = np.round(
                 calculate_jv_parameters(
-                    df["voltage_measured"][n], -df["current_measured"][n] / area * 1e3
+                    df["voltage_measured"][n],
+                    -df["current_measured"][n],
                 )["rch"],
                 4,
             )
@@ -781,7 +785,7 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
 
     df_filter = df
 
-    Filter_1 = "0"
+    Filter_1 = ""
 
     df_filter1 = df_filter[df_filter.repeat.str.contains(Filter_1)]
     df_filter3 = df_filter1.reset_index(drop=True)
@@ -888,13 +892,13 @@ def boxplot_jv(
                     ax[n, k].set(ylim=(ff_lim[0], ff_lim[1]))
 
             if y_var == "rsh":
-                y_axis_label = "Shunt Resistance Ω/cm$^2$"
+                y_axis_label = "Shunt Resistance Ωcm$^2$"
                 ax[n, k].set_ylabel(y_axis_label)
                 if rsh_lim:
                     ax[n, k].set(ylim=(rsh_lim[0], rsh_lim[1]))
 
             if y_var == "rs":
-                y_axis_label = "Series Resistance Ω/cm$^2$"
+                y_axis_label = "Series Resistance Ωcm$^2$"
                 ax[n, k].set_ylabel(y_axis_label)
                 if rs_lim:
                     ax[n, k].set(ylim=(rs_lim[0], rs_lim[1]))
