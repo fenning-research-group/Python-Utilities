@@ -652,6 +652,7 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     internal["name"] = []
     internal["direction"] = []
     internal["repeat"] = []
+    internal["pixel"] = []
 
     data["p"] = []
     data["current_measured"] = []
@@ -664,9 +665,22 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
 
     for n in range(len(fids)):
         internal["name"].append(os.path.basename(fids[n])[:-4].split("_")[0])
+
         if os.path.basename(fids[n])[:-4].split("_")[2] == "":
             repeat = "0"
-        internal["repeat"].append(repeat)
+            internal["repeat"].append(repeat)
+        if os.path.basename(fids[n])[:-4].split("_")[2] != "":
+            repeat = os.path.basename(fids[n])[:-4].split("_")[2]
+            internal["repeat"].append(repeat)
+
+        if os.path.basename(fids[n])[:-4].split("_")[1] == "":
+            pixel = "0"
+            internal["pixel"].append(pixel)
+
+        if os.path.basename(fids[n])[:-4].split("_")[1] != "":
+            pixel = os.path.basename(fids[n])[:-4].split("_")[1]
+            internal["pixel"].append(pixel)
+
         internal["direction"].append(os.path.basename(fids[n])[:-4].split("_")[3])
 
         df_single = pd.read_csv(fids[n], header=0)
@@ -696,8 +710,9 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     df["current_measured_flipped"] = -1 * df["current_measured"]
 
     df.insert(0, "name", internal["name"])
-    df.insert(1, "repeat", internal["repeat"])
-    df.insert(2, "direction", internal["direction"])
+    df.insert(1, "pixel", internal["pixel"])
+    df.insert(2, "repeat", internal["repeat"])
+    df.insert(3, "direction", internal["direction"])
 
     df["area"] = np.nan
 
@@ -791,7 +806,18 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     df_filter3 = df_filter1.reset_index(drop=True)
 
     df_export = df_filter3[
-        ["PASCAL_ID", "direction", "pce", "ff", "voc", "jsc", "rsh", "rs", "rch"]
+        [
+            "PASCAL_ID",
+            "pixel",
+            "direction",
+            "pce",
+            "ff",
+            "voc",
+            "jsc",
+            "rsh",
+            "rs",
+            "rch",
+        ]
     ]
 
     TodaysDate = time.strftime("%Y%m%d")
