@@ -632,7 +632,7 @@ def calculate_jv_parameters(v=np.array, j=np.array):
     return returndict
 
 
-def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
+def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3, export_raw=False):
     # sample name must be recorded in the following format: 's{sample_number}_{rescan_number}'
     rootdir = rootdir
     dark = os.path.join(rootdir, "dark")
@@ -826,6 +826,32 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     os.chdir(fp)
     df_export.to_pickle(f"{TodaysDate}_{batch}_JV.pkl")
     os.chdir("..")
+
+    if export_raw == True:
+        df_export_raw = df_filter3[
+            [
+                "PASCAL_ID",
+                "pixel",
+                "direction",
+                "voltage_measured",
+                "current_measured",
+                "pce",
+                "ff",
+                "voc",
+                "jsc",
+                "rsh",
+                "rs",
+                "rch",
+            ]
+        ]
+
+        TodaysDate = time.strftime("%Y%m%d")
+        fp = "JV_pkl"
+        if not os.path.exists(fp):
+            os.mkdir(fp)
+        os.chdir(fp)
+        df_export_raw.to_pickle(f"{TodaysDate}_{batch}_RAW_JV.pkl")
+        os.chdir("..")
     return df_filter3
 
 
