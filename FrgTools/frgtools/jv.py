@@ -666,20 +666,19 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3):
     for n in range(len(fids)):
         internal["name"].append(os.path.basename(fids[n])[:-4].split("_")[0])
 
+        if os.path.basename(fids[n])[:-4].split("_")[1] == "":
+            pixel = "0"
+            internal["pixel"].append(pixel)
+        if os.path.basename(fids[n])[:-4].split("_")[1] != "":
+            pixel = os.path.basename(fids[n])[:-4].split("_")[1]
+            internal["pixel"].append(pixel)
+
         if os.path.basename(fids[n])[:-4].split("_")[2] == "":
             repeat = "0"
             internal["repeat"].append(repeat)
         if os.path.basename(fids[n])[:-4].split("_")[2] != "":
             repeat = os.path.basename(fids[n])[:-4].split("_")[2]
             internal["repeat"].append(repeat)
-
-        if os.path.basename(fids[n])[:-4].split("_")[1] == "":
-            pixel = "0"
-            internal["pixel"].append(pixel)
-
-        if os.path.basename(fids[n])[:-4].split("_")[1] != "":
-            pixel = os.path.basename(fids[n])[:-4].split("_")[1]
-            internal["pixel"].append(pixel)
 
         internal["direction"].append(os.path.basename(fids[n])[:-4].split("_")[3])
 
