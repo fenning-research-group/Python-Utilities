@@ -632,7 +632,15 @@ def calculate_jv_parameters(v=np.array, j=np.array):
     return returndict
 
 
-def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3, export_raw=False):
+def jv_metrics_pkl(
+    rootdir=str,
+    batch=str,
+    area=0.07,
+    pce_cutoff=3,
+    ff_cutoff=None,
+    voc_cutoff=None,
+    export_raw=False,
+):
     # sample name must be recorded in the following format: 's{sample_number}_{rescan_number}'
     rootdir = rootdir
     dark = os.path.join(rootdir, "dark")
@@ -780,7 +788,13 @@ def jv_metrics_pkl(rootdir=str, batch=str, area=0.07, pce_cutoff=3, export_raw=F
 
     df = df.sort_values(by=["pce"], ascending=False)
     # df = df.dropna()
-    df = df[~(df["pce"] <= pce_cutoff)]
+    if pce_cutoff != None:
+        df = df[~(df["pce"] <= pce_cutoff)]
+    if ff_cutoff != None:
+        df = df[~(df["ff"] <= ff_cutoff)]
+    if voc_cutoff != None:
+        df = df[~(df["voc"] <= voc_cutoff)]
+
     # df = df[~(df['pce'] <= 3)]
     df = df[~(df["ff"] >= 95)]
     # df = df[~(df['ff'] <= 70)]
