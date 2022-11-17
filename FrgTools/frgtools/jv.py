@@ -10,6 +10,8 @@ import time
 import pandas as pd
 import glob
 import seaborn as sns
+from scipy.interpolate import interp1d
+from pvlib.ivtools.sde import fit_sandia_simple as fit_jv
 
 
 def load_tracer(fpath):
@@ -632,6 +634,44 @@ def calculate_jv_parameters(v=np.array, j=np.array):
     return returndict
 
 
+def calc_i_factor(data):
+
+    # AREA = 0.07 #cm^2, mask area to turn values areal
+
+    for n in range(len(data)):
+        try:
+            i_factor_raw_v = data["voltage_measured"][n]
+            i_factor_raw_j = -data["current_measured"][n] / 0.07 / 0.001
+
+            v_interp = interp1d(i_factor_raw_v, i_factor_raw_j)
+            j_interp = interp1d(i_factor_raw_j, i_factor_raw_v)
+            i_factor_jsc = v_interp(0)
+            i_factor_voc = j_interp(0)
+            i_factor_v = i_factor_raw_v[i_factor_raw_v > 0]
+            i_factor_v = i_factor_v[i_factor_v < i_factor_voc]
+
+            i_factor_v = np.append(i_factor_v, i_factor_voc)
+            i_factor_v = np.append(i_factor_v, 0)
+            i_factor_v = np.sort(i_factor_v)
+
+            i_factor_j = i_factor_raw_j[i_factor_raw_v > 0]
+            i_factor_j = i_factor_j[i_factor_j > 0]
+            if i_factor_j[0] < i_factor_j[-1]:
+                i_factor_j = i_factor_j[::-1]
+
+            i_factor_j = np.insert(i_factor_j, len(i_factor_j), 0)
+            i_factor_j = np.insert(i_factor_j, 0, i_factor_jsc)
+
+            j_ill, j_0, r_s, r_sh, vth_n = fit_jv(i_factor_v, i_factor_j)
+
+            i_factor = vth_n / 0.026
+
+            data["i_factor"][n] = i_factor
+        except:
+            data["i_factor"][n] = np.nan
+    return data
+
+
 def jv_metrics_pkl(
     rootdir=str,
     batch=str,
@@ -693,7 +733,6 @@ def jv_metrics_pkl(
         df_single = pd.read_csv(fids[n], header=0)
         voltage_setpoint = np.asarray(df_single["Voltage (V)"])
         current_measured = np.asarray(df_single["Current (A)"]) * sim_correction_factor
-
         measured_voltage = np.asarray(df_single["Measured Voltage (V)"])
 
         data["voltage_measured"].append(measured_voltage)
@@ -711,6 +750,7 @@ def jv_metrics_pkl(
     df["rsh"] = np.nan
     df["rs"] = np.nan
     df["rch"] = np.nan
+    df["i_factor"] = np.nan
 
     df["current_measured_flipped"] = np.array
 
@@ -804,12 +844,10 @@ def jv_metrics_pkl(
 
     df = df.reset_index(drop=True)
 
-    # df
-
     df["PASCAL_ID"] = ""
     df["PASCAL_ID"] = df["name"].astype(int)
 
-    # repeats
+    df = calc_i_factor(df)
 
     df_filter = df
 
@@ -830,6 +868,7 @@ def jv_metrics_pkl(
             "rsh",
             "rs",
             "rch",
+            "i_factor",
         ]
     ]
 
@@ -856,6 +895,7 @@ def jv_metrics_pkl(
                 "rsh",
                 "rs",
                 "rch",
+                "i_factor",
             ]
         ]
 
@@ -878,6 +918,8 @@ def boxplot_jv(
     jsc_lim=None,
     rsh_lim=None,
     rs_lim=None,
+    rch_lim=None,
+    i_factor_lim=None,
 ):
     """
     takes a dataframe and plots a boxplot of the JV parameters
@@ -891,12 +933,12 @@ def boxplot_jv(
     if xvar == None:
         xvar = "all"
 
-    horiz = 3
+    horiz = 4
     vert = 2
     embiggen = 3
     q = 0
 
-    y_var_list = ["pce", "jsc", "ff", "rsh", "voc", "rs"]
+    y_var_list = ["pce", "rch", "ff", "rsh", "voc", "rs", "jsc", "i_factor"]
     fig, ax = plt.subplots(
         vert,
         horiz,
@@ -938,6 +980,7 @@ def boxplot_jv(
                 ax[n, k].set_ylabel(y_axis_label)
                 if pce_lim:
                     ax[n, k].set(ylim=(pce_lim[0], pce_lim[1]))
+                    
             if y_var == "jsc":
                 y_axis_label = "J$_{SC}$ mA/cm$^2$"
                 ax[n, k].set_ylabel(y_axis_label)
@@ -968,8 +1011,18 @@ def boxplot_jv(
                 if rs_lim:
                     ax[n, k].set(ylim=(rs_lim[0], rs_lim[1]))
 
-            # if y_var == 'rch':
-            #     ax[n, k].set_ylabel(y_axis_label)
-            #     y_axis_label = 'Characteristic Resistance Ω/cm$^2$'
+            if y_var == "rch":
+                y_axis_label = "Characteristic Resistance Ωcm$^2$"
+                ax[n, k].set_ylabel(y_axis_label)
+                if rch_lim:
+                    ax[n, k].set(ylim=(rch_lim[0], rch_lim[1]))
+
+            if y_var == "i_factor":
+                y_axis_label = "Ideality Factor"
+
+                ax[n, k].set_ylabel(y_axis_label)
+                if i_factor_lim:
+                    ax[n, k].set(ylim=(i_factor_lim[0], i_factor_lim[1]))
+
             q += 1
     plt.show()
