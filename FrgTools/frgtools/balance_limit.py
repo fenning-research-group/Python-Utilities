@@ -11,7 +11,7 @@ import os
 from scipy.optimize import fsolve
 
 import os
-from OPSIM import SETFOS_processing
+
 import frgtools.misc as frgm
 import pandas as pd
 import numpy as np
