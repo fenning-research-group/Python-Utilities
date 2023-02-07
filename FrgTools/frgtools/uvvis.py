@@ -241,7 +241,7 @@ def tauc(
             slope, intercept, rval, _, stderr = linregress(
                 ev[fit_window], taucvalue[fit_window]
             )
-            r2 = rval ** 2
+            r2 = rval**2
             if r2 > best_r2 and slope > 0:
                 best_r2 = r2
                 best_slope = slope
@@ -285,6 +285,10 @@ def tauc(
             "r2": best_r2,
             "bandgap_min": Eg_min,
             "bandgap_max": Eg_max,
+            "taucvalue": taucvalue,
+            "best_slope": best_slope,
+            "best_intercept": best_intercept,
+            "ev": ev,
         }
         return output
 

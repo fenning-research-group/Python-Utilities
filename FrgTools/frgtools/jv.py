@@ -708,7 +708,7 @@ def jv_metrics_pkl(
     data["voltage_measured"] = []
     data["voltage_setpoint"] = []
 
-    area = 0.07
+    area = area
     sim_correction_factor = 1.00
 
     for n in range(len(fids)):
@@ -980,7 +980,7 @@ def boxplot_jv(
                 ax[n, k].set_ylabel(y_axis_label)
                 if pce_lim:
                     ax[n, k].set(ylim=(pce_lim[0], pce_lim[1]))
-                    
+
             if y_var == "jsc":
                 y_axis_label = "J$_{SC}$ mA/cm$^2$"
                 ax[n, k].set_ylabel(y_axis_label)
