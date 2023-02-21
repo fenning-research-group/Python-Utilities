@@ -1,0 +1,10 @@
+matplotlib-scalebar
+imreg_dft
+renishawWiRE
+scipy
+matplotlib
+numpy
+opencv-python
+tqdm
+scikit-image
+affine6p

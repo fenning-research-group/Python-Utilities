@@ -6,8 +6,11 @@ import matplotlib.pyplot as plt
 from time import sleep
 from pymeasure.instruments.srs import SR830
 from tqdm.auto import tqdm
+import requests
+import io
 
 class PLQY:
+
     """The control class for taking PLQY using the integrating sphere and lock-in
     amplifier in SERF156.
     """
@@ -70,10 +73,14 @@ class PLQY:
             float: the responsivity, arbitrary units
         """
         try: # check to make sure the file is in the directory
-            resp = pd.read_csv('Detector_Responsivity.csv')
+            url = "https:\\raw.githubusercontent.com\\fenning-research-group\\Python-Utilities\\master\\FrgTools\\frgtools\\Detector_Responsivity.csv"
+            download = requests.get(url).content
+            resp = pd.read_csv(url)
+
             return float(resp['Responsivity'][resp['Wavelength'] == emission_wl])
+
         except: # if not, tell the user to do so
-            print('Please load the Detector_Responsivity.csv file into current working directory')
+            print(f'Detector_Responsivity.csv not able to load...check download link in code or internet connectivity:\n{url}')
 
 
     def _calc_plqy(self, data):
