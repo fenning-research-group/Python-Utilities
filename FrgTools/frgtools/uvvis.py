@@ -107,8 +107,8 @@ def calc_absorbance(r, t):
     if t.max() > 1:
         t /= 100
 
-    return -np.log10(t / ((1 - r) ** 2))  # absorbance = -log_10(I/I0)
-
+    # return -np.log10(t / ((1 - r) ** 2))  # absorbance = -log_10(I/I0)
+    return -np.log10(t /(1 - r))
 
 def beers(a, pathlength, concentration=1):
     """
