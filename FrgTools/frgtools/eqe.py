@@ -55,7 +55,7 @@ class EQE:
         stop = int(input("Stop Wavelength = "))
         step = int(input("Interval = "))
          
-        self.wls = np.arange(start, stop, step)
+        self.wls = np.arange(start, stop+step, step)
 
         print(f'\nThe wavelengths that will be used are:\n{self.wls}')
 
@@ -67,7 +67,7 @@ class EQE:
         self.m.wavelength = 532
 
         input('Please place calibrated Si photodiode centered on spot. \nPress Enter when in place \n')
-        input('Please ensure chopper wheel is turned off and beam is unobstructed. \nPress Enter when done \n')
+        input('Please ensure chopper wheel is turned on and beam is unobstructed. \nPress Enter when done \n')
         input('Eliminate stray light in room. \nPress Enter to begin the lightsource correction \n')
 
         N_AVG = 20     # number of times to query the photodiode
@@ -123,8 +123,9 @@ class EQE:
             self.m.wavelength = wl     # change the wavelength on the mono
             self.pm.sense.correction.wavelength = wl   # change the photodiode wavelength. a correction for responsivity.
 
-            sleep(5) # let the lockin...uh...lock in.
-
+            self.lia.auto_phase()
+            sleep(15*tc) # let the lockin...uh...lock in.
+            _ = self.lia.magnitude
             for i in range(N_AVERAGES):   #average over 20 queries
                 temp_lia.append(self.lia.magnitude)
                 sleep(tc)  # put one tc between the queries. this is an attempt to avoid sampling faster than the output updates

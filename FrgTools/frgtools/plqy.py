@@ -37,6 +37,7 @@ class PLQY:
 
         self.plus_minus = u"\u00B1" # this is the plus/minus unicode symbol. Makes printing this character easier
         self.data = {}
+        self.code = 'Updated'
 
     def _take_meas(self, sample_name, scan_type, n_avg, time_constant):
         """internal function for taking a measurement
@@ -46,19 +47,38 @@ class PLQY:
             scan_type (str): one of the six scan conditions
             n_avg (int): the number of times to query the lock-in amplifier. More is not always better, as the laser drifts over periods of minutes.
         """
-        self.lia.time_constant = time_constant
+        for i in range(5):
+            _ = self.lia.time_constant
 
-        self.lia.auto_gain()
-        sleep(15*time_constant)        
-        self.lia.auto_phase()
-         # make sure the amp is well in phase with the ref
+        self.lia.time_constant = time_constant
+        sleep(15*time_constant)  
+
+        try:      
+            self.lia.auto_gain()
+        except:
+            print('SRS830 couldnt find suitible sensitivity, setting least aggresive gain manually')
+            mag = 0.0
+            i = 1
+            while mag == 0.0:    
+                self.lia.sensitivity = self.lia.SENSITIVITIES[-i]
+                print(f'Sensitivity set to: {self.lia.sensitivity}')
+                sleep(time_constant)
+                for _ in range(5):
+                    mag += self.lia.magnitude
+                mag = mag/5
+                i+=1
+                print(f'Magnitude: {mag:0.2e}V')
+                
         sleep(15*time_constant) # let the signal settle
 
         raw = []
+        for i in range(5):
+             _ = self.lia.magnitude # seems like there was always a measurement in the buffer, so clearing that
+
         with tqdm(total=n_avg, position=0, leave=True) as pbar:
             for _ in tqdm(range(n_avg), position = 0, leave = True):
                 raw.append(self.lia.magnitude) # get the reading from the lock-in
-                sleep(self.lia.time_constant) # wait for a time constant to avoid over sampling
+                sleep(time_constant) # wait for a time constant to avoid over sampling
                 pbar.update() 
 
         self.data[sample_name][scan_type] = np.array(raw) # add the collected data to the rest
