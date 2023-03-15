@@ -116,16 +116,18 @@ class EQE:
         lia_voltages = []
         lia_voltage_stds = []
 
+        for _ in range(5):
+            waste = self.lia.time_constant
+
         tc = self.lia.time_constant
 
         for wl in tqdm(self.wls, desc = 'Taking EQE'):
             temp_lia = []
             self.m.wavelength = wl     # change the wavelength on the mono
-            self.pm.sense.correction.wavelength = wl   # change the photodiode wavelength. a correction for responsivity.
 
-            self.lia.auto_phase()
             sleep(15*tc) # let the lockin...uh...lock in.
-            _ = self.lia.magnitude
+            for _ in range(5):
+                waste = self.lia.magnitude
             for i in range(N_AVERAGES):   #average over 20 queries
                 temp_lia.append(self.lia.magnitude)
                 sleep(tc)  # put one tc between the queries. this is an attempt to avoid sampling faster than the output updates
