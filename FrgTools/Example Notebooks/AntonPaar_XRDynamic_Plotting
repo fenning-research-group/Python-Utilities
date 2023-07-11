@@ -1,0 +1,145 @@
+XRD Plotting Notebook - Anton Paar XRDynamic .hdf5 files 
+Connor J. Dolan
+July 9, 2023
+# Setup
+# Import necessary packagaes
+import numpy as np
+import matplotlib.pyplot as plt
+import h5py as h5
+import frgtools.misc as frgm
+from natsort import natsorted
+import os
+# Define working directory
+basedir = '/Users/connordolan/Downloads/Copy_FAAc_redo'
+# Load and sort files, store in "fids" list
+fids = frgm.listdir(basedir, 'hdf5')
+fids = natsorted(fids)
+fids
+# Define files to be plotted from fids list
+faac_0 = h5.File(fids[0])
+faac_0_dmf = h5.File(fids[7])
+faac_3 = h5.File(fids[1])
+faac_6 = h5.File(fids[3])
+faac_9 = h5.File(fids[5])
+faac_12 = h5.File(fids[6])
+# Plotting
+# Define the scans and desired labels that we want to plot here, in order. These will be looped through and plotted one by one with the labels plotted as text.
+entries = [faac_0, faac_0_dmf, faac_3, faac_6, faac_9, faac_12]
+labels = ['FAPbI$_3$', 'FAPbI$_3$ & DMF', '3% FAAc', '6% FAAc', '9% FAAc', '12% FAAc']
+
+# Defines min and max two theta for plotting.
+twotheta_min = 10
+twotheta_max = 45
+
+# Determines whether we're normalizing
+norm = True
+
+# Determines whether we're offsetting the plots
+offset = True
+def xrdplotter(entries = entries, labels = labels, norm = True, offset = True, twotheta_min = 10, twotheta_max = 45, save = False, savepath = os.getcwd() + '/plotted', cmap = plt.cm.copper):
+ 
+    # Defines color list based on specified colormap
+    colors = cmap(np.linspace(0, 1, len(entries)))
+
+    # Defines a counter variable "index" that will start at 0 and increase by 1 with each loop - this allows us to offset the plots in y. Will also be used to index the list of colors made above.
+    index = 0
+
+    # Defines a figure with figure size (4,3) in (x,y) (this is what almost all my plots are made with so tick/label sizes are standardized) with 200 dpi (dots per inch) so we can see it better on our computer. Facecolor just makes the background white so people can see it on slack.
+    plt.figure(figsize = (4,3), dpi = 200, facecolor='white')
+
+    # Now we need to loop through all of these entries and labels to plot them
+    # Try help(zip) to see what it does - it basically just allows us to access the (n)th file from "entries" and "labels" here at the same time, which is what we want! Also, print() is your friend when using for loops!
+    for entry, label in zip(entries, labels):
+        # Defines the twotheta array from the .hdf5 file saved by the Anton Paar. Will be used as our "x" variable for XRD plotting.
+        twotheta = entry['entry']['data']['two_theta'][:]
+
+        # Defines the counts array from the .hdf5 file saved by the Anton Paar. Will be used as our "y" variable for XRD plotting. (High diffraction counts indicate crystalline peak!)
+        counts = entry['entry']['data']['data'][0,:,0]
+
+        if norm:
+            if offset:
+                # Plots XRD data, normalized with an offset (+ index part) with the color corresponding to the correct scan. (Great option if we don't care about relative intensity of different scans)
+                plt.plot(twotheta, counts/counts.max() + index, color = colors[index])
+
+                # Plots text!
+                plt.text(twotheta_min + (twotheta_max - twotheta_min)*0.6, 0.35 + index, label, color = colors[index], weight = 'bold')
+            else:
+                # Plots XRD data, normalized with no offset with the color corresponding to the correct scan. (This option is maybe useful for showing peak shifts but I wouldn't use it much)
+                plt.plot(twotheta, counts/counts.max(), color = colors[index])
+
+        else:
+            if offset:
+                # Plots XRD data, not normalized with an offset (+ index *np.max(counts) part - offsets by max value of last scan so there's no overlap) with the color corresponding to the correct scan. (Useful if we care about relative intensities)
+                if index == 0:
+                    # Plots x,y data without an offset.
+                    plt.plot(twotheta, counts + index * np.max(counts), color = colors[index])
+
+                    # Plots text!
+                    plt.text(twotheta_min + (twotheta_max - twotheta_min)*0.6, 0.15*np.max(counts), label, color = colors[index], weight = 'bold')
+
+                    # If it's the first scan, we want to define offset value as the max intensity.
+                    offset_value = np.max(counts)
+
+                else:
+                    # Plots x,y data with an offset.
+                    plt.plot(twotheta, counts + index * offset_value, color = colors[index])
+
+                    # Plots text!
+                    plt.text(twotheta_min + (twotheta_max - twotheta_min)*0.6, index * offset_value + 0.35*np.max(counts), label, color = colors[index], weight = 'bold')
+
+                
+            else:
+                # Plots XRD data, not normalized with no offset with the color corresponding to the correct scan.
+                plt.plot(twotheta, counts, color = colors[index], label = label)
+
+                
+        # Adds one to index for next iteration of the loop
+        index += 1
+
+    # If we don't have an offset, it's simpler to use a normal legend here - it's best to go back in powerpoint and make a text legend rather than python default legend though imo. You can also customize here as needed to put in a custom text legend.
+    if not offset:
+        plt.legend(frameon = False)
+
+    # Now for cosmetics (labels, bounds etc.)
+
+    # Sets x limits to be min and max of twotheta specified.
+    plt.xlim(twotheta_min, twotheta_max)
+
+    # Removes y ticks (just makes it look cleaner imo, feel free to remove at your disgretion, especially if we aren't normalizing)
+    plt.yticks([])
+
+    # Sets xlabel to "Two Theta"
+    plt.xlabel('Two Theta (\N{DEGREE SIGN})')
+
+    # Sets y label to "Diffraction Intensity" - make sure to remove "(A.U.)" if we have ticks left on!
+    plt.ylabel('Diffraction Intensity (A.U.)')
+
+    # Saves figure! DPI is 720, which is high, to make a high res/nice figure. bbox_inches = 'tight' just makes sure we don't leave any labels or text out.
+    if save:
+        plt.savefig(savepath, dpi = 720, bbox_inches = 'tight')
+
+    plt.show()
+
+
+# Plot!
+xrdplotter(
+    entries = entries, 
+    labels = labels, 
+    norm = True, 
+    offset = True, 
+    twotheta_min = 10, 
+    twotheta_max = 45, 
+    save = False, 
+    savepath = os.getcwd() + '/Plots/Norm_XRD_FAAc', 
+    cmap = plt.cm.copper)
+# Plot (zoomed in on (001))
+xrdplotter(
+    entries = entries, 
+    labels = labels, 
+    norm = True, 
+    offset = True, 
+    twotheta_min = 13.5, 
+    twotheta_max = 14.5, 
+    save = False, 
+    savepath = os.getcwd() + '/Plots/Norm_XRD_FAAc', 
+    cmap = plt.cm.copper)
