@@ -909,10 +909,19 @@ def jv_metrics_pkl(
     return df_filter3
 
 
-def boxplot_jv(data, xvar=None, plot_kwargs={}, subplot_kwargs={}, **lims):
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+from natsort import natsorted
+
+def boxplot_jv(data, xvar=None, box_kwargs={}, strip_kwargs={}, subplot_kwargs={}, **lims):
     data["all"] = "all"
     if xvar is None:
         xvar = "all"
+
+    # Sort columns if xvar is not 'all'
+    if xvar != "all":
+        data[xvar] = pd.Categorical(data[xvar], categories=natsorted(data[xvar].unique()), ordered=True)
 
     horiz, vert = 4, 2
     embiggen = subplot_kwargs.get("embiggen", 3)
@@ -931,7 +940,15 @@ def boxplot_jv(data, xvar=None, plot_kwargs={}, subplot_kwargs={}, **lims):
         for n in range(vert):
             y_var = y_var_list[q]
             ylim_key = f"{y_var}_lim"
+            xlabel_size = subplot_kwargs.get('xlabel_size', None)
+            xlabel_rotation = subplot_kwargs.get('xlabel_rotation', None)
 
+            if xlabel_size or xlabel_rotation:
+                for label in ax[n, k].get_xticklabels():
+                    if xlabel_size:
+                        label.set_size(xlabel_size)
+                    if xlabel_rotation:
+                        label.set_rotation(xlabel_rotation)
             sns.boxplot(
                 x=xvar,
                 y=y_var,
@@ -939,7 +956,7 @@ def boxplot_jv(data, xvar=None, plot_kwargs={}, subplot_kwargs={}, **lims):
                 hue=data["direction"],
                 showfliers=False,
                 ax=ax[n, k],
-                **plot_kwargs
+                **box_kwargs
             )
             ax[n, k].get_legend().remove()
 
@@ -949,16 +966,13 @@ def boxplot_jv(data, xvar=None, plot_kwargs={}, subplot_kwargs={}, **lims):
                 data=data,
                 hue=data["direction"],
                 ax=ax[n, k],
-                **plot_kwargs
+                dodge=True,
+                **strip_kwargs
             )
             ax[n, k].get_legend().remove()
 
             if ylim_key in lims:
                 ax[n, k].set(ylim=(lims[ylim_key][0], lims[ylim_key][1]))
-
-            # Additional customizations can go here
-            if subplot_kwargs.get("remove_xlabel") and xvar == "all":
-                ax[n, k].set_xlabel("")
 
             q += 1
     plt.show()
