@@ -909,36 +909,23 @@ def jv_metrics_pkl(
     return df_filter3
 
 
-def boxplot_jv(
-    data,
-    xvar=None,
-    pce_lim=None,
-    ff_lim=None,
-    voc_lim=None,
-    jsc_lim=None,
-    rsh_lim=None,
-    rs_lim=None,
-    rch_lim=None,
-    i_factor_lim=None,
-):
-    """
-    takes a dataframe and plots a boxplot of the JV parameters
-    one of the columns must be the direction of the scan
-    so 2 rows per device (fwd and rev)
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+from natsort import natsorted
 
-
-    """
-    data = data
+def boxplot_jv(data, xvar=None, box_kwargs={}, strip_kwargs={}, subplot_kwargs={}, **lims):
     data["all"] = "all"
-    if xvar == None:
+    if xvar is None:
         xvar = "all"
 
-    horiz = 4
-    vert = 2
-    embiggen = 3
-    q = 0
+    # Sort columns if xvar is not 'all'
+    if xvar != "all":
+        data[xvar] = pd.Categorical(data[xvar], categories=natsorted(data[xvar].unique()), ordered=True)
 
-    y_var_list = ["pce", "rch", "ff", "rsh", "voc", "rs", "jsc", "i_factor"]
+    horiz, vert = 4, 2
+    embiggen = subplot_kwargs.get("embiggen", 3)
+    
     fig, ax = plt.subplots(
         vert,
         horiz,
@@ -946,83 +933,46 @@ def boxplot_jv(
         constrained_layout=True,
     )
 
+    y_var_list = ["pce", "rch", "ff", "rsh", "voc", "rs", "jsc", "i_factor"]
+    q = 0
+
     for k in range(horiz):
         for n in range(vert):
             y_var = y_var_list[q]
+            ylim_key = f"{y_var}_lim"
+            xlabel_size = subplot_kwargs.get('xlabel_size', None)
+            xlabel_rotation = subplot_kwargs.get('xlabel_rotation', None)
 
-            ax[n, k] = sns.boxplot(
+            if xlabel_size or xlabel_rotation:
+                for label in ax[n, k].get_xticklabels():
+                    if xlabel_size:
+                        label.set_size(xlabel_size)
+                    if xlabel_rotation:
+                        label.set_rotation(xlabel_rotation)
+            sns.boxplot(
                 x=xvar,
                 y=y_var,
                 data=data,
                 hue=data["direction"],
                 showfliers=False,
                 ax=ax[n, k],
+                **box_kwargs
             )
             ax[n, k].get_legend().remove()
 
-            ax[n, k] = sns.stripplot(
+            sns.stripplot(
                 x=xvar,
                 y=y_var,
                 data=data,
                 hue=data["direction"],
-                size=3,
-                linewidth=0.2,
                 ax=ax[n, k],
                 dodge=True,
+                **strip_kwargs
             )
             ax[n, k].get_legend().remove()
 
-            if xvar == "all":
-                ax[n, k].set_xlabel("")
-
-            if y_var == "pce":
-                y_axis_label = "Power Conversion Effiency %"
-                ax[n, k].set_ylabel(y_axis_label)
-                if pce_lim:
-                    ax[n, k].set(ylim=(pce_lim[0], pce_lim[1]))
-
-            if y_var == "jsc":
-                y_axis_label = "J$_{SC}$ mA/cm$^2$"
-                ax[n, k].set_ylabel(y_axis_label)
-                if jsc_lim:
-                    ax[n, k].set(ylim=(jsc_lim[0], jsc_lim[1]))
-
-            if y_var == "voc":
-                y_axis_label = "V$_{OC}$ mV"
-                ax[n, k].set_ylabel(y_axis_label)
-                if voc_lim:
-                    ax[n, k].set(ylim=(voc_lim[0], voc_lim[1]))
-
-            if y_var == "ff":
-                y_axis_label = "Fill Factor %"
-                ax[n, k].set_ylabel(y_axis_label)
-                if ff_lim:
-                    ax[n, k].set(ylim=(ff_lim[0], ff_lim[1]))
-
-            if y_var == "rsh":
-                y_axis_label = "Shunt Resistance Ωcm$^2$"
-                ax[n, k].set_ylabel(y_axis_label)
-                if rsh_lim:
-                    ax[n, k].set(ylim=(rsh_lim[0], rsh_lim[1]))
-
-            if y_var == "rs":
-                y_axis_label = "Series Resistance Ωcm$^2$"
-                ax[n, k].set_ylabel(y_axis_label)
-                if rs_lim:
-                    ax[n, k].set(ylim=(rs_lim[0], rs_lim[1]))
-
-            if y_var == "rch":
-                y_axis_label = "Characteristic Resistance Ωcm$^2$"
-                ax[n, k].set_ylabel(y_axis_label)
-                if rch_lim:
-                    ax[n, k].set(ylim=(rch_lim[0], rch_lim[1]))
-
-            if y_var == "i_factor":
-                y_axis_label = "Ideality Factor"
-
-                ax[n, k].set_ylabel(y_axis_label)
-                if i_factor_lim:
-                    ax[n, k].set(ylim=(i_factor_lim[0], i_factor_lim[1]))
+            if ylim_key in lims:
+                ax[n, k].set(ylim=(lims[ylim_key][0], lims[ylim_key][1]))
 
             q += 1
     plt.show()
