@@ -37,7 +37,7 @@ class PLQY:
 
         self.plus_minus = u"\u00B1" # this is the plus/minus unicode symbol. Makes printing this character easier
         self.data = {}
-        self.code = 'Updated'
+        self.code = 'Updated March 17th, 2023'
 
     def _take_meas(self, sample_name, scan_type, n_avg, time_constant):
         """internal function for taking a measurement
@@ -48,35 +48,39 @@ class PLQY:
             n_avg (int): the number of times to query the lock-in amplifier. More is not always better, as the laser drifts over periods of minutes.
         """
         for i in range(5):
-            _ = self.lia.time_constant
+            waste = self.lia.time_constant
+            print('Time Constant Reading: ', waste )
+            sleep(0.5)
 
         self.lia.time_constant = time_constant
-        sleep(15*time_constant)  
+        sleep(0.5)
 
-        try:      
-            self.lia.auto_gain()
-        except:
-            print('SRS830 couldnt find suitible sensitivity, setting least aggresive gain manually')
-            mag = 0.0
-            i = 1
-            while mag == 0.0:    
-                self.lia.sensitivity = self.lia.SENSITIVITIES[-i]
-                print(f'Sensitivity set to: {self.lia.sensitivity}')
-                sleep(time_constant)
-                for _ in range(5):
-                    mag += self.lia.magnitude
-                mag = mag/5
-                i+=1
-                print(f'Magnitude: {mag:0.2e}V')
-                
+        self.lia.sensitivity = 1 
+        sleep(0.5)
+
+        for j in range(5):
+            waste1 = self.lia.sensitivity
+            print('Sensitivity Before QuickRange: ', waste1 )
+            sleep(0.5)
+
+        self.lia.quick_range()
+        sleep(0.5)      
+            
         sleep(15*time_constant) # let the signal settle
 
-        raw = []
-        for i in range(5):
-             _ = self.lia.magnitude # seems like there was always a measurement in the buffer, so clearing that
+        for k in range(5):
+            waste2 = self.lia.sensitivity
+            print('Sensitivity After QuickRange: ', waste2 )
+            sleep(0.5)
 
+        for l in range(5):
+            _ = self.lia.magnitude
+            print('Magnitude Reading: ', _)
+            sleep(0.5)
+
+        raw = []
         with tqdm(total=n_avg, position=0, leave=True) as pbar:
-            for _ in tqdm(range(n_avg), position = 0, leave = True):
+            for m in tqdm(range(n_avg), position = 0, leave = True):
                 raw.append(self.lia.magnitude) # get the reading from the lock-in
                 sleep(time_constant) # wait for a time constant to avoid over sampling
                 pbar.update() 
@@ -93,9 +97,12 @@ class PLQY:
             float: the responsivity, arbitrary units
         """
         try: # check to make sure the file is in the directory
-            url = "https:\\raw.githubusercontent.com\\fenning-research-group\\Python-Utilities\\master\\FrgTools\\frgtools\\Detector_Responsivity.csv"
-            download = requests.get(url).content
-            resp = pd.read_csv(url)
+            # url = "https:/raw.githubusercontent.com/fenning-research-group/Python-Utilities/master/FrgTools/frgtools/Detector_Responsivity.csv"
+            # download = requests.get(url).content
+            fid = 'C:\\Users\\PVGroup\\Documents\\GitHub\\Python-Utilities\\FrgTools\\frgtools\\Detector_Responsivity.csv'
+            # resp = pd.read_csv(url)
+            resp = pd.read_csv(fid)
+
 
             return float(resp['Responsivity'][resp['Wavelength'] == emission_wl])
 

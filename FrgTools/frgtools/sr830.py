@@ -89,7 +89,6 @@ class SR830(Instrument):
     )
 
     def get_magnitude(self):
-        # return Instrument.measurement("OUTP?3")
         magnitude = self.ask("OUTP?3")
         time.sleep(self.POLLING_DELAY)
         return float(magnitude)
@@ -139,18 +138,6 @@ class SR830(Instrument):
     values=SENSITIVITIES,
     map_values=True
     )
-
-    # def get_time_constant(self):
-
-    #     time_constant = self.ask("OFLT?")
-    #     time.sleep(self.POLLING_DELAY)
-    #     return float(time_constant)
-
-    # def set_time_constant(self, time_constant = 0.1):
-
-    #     time_constant = discreteTruncate(time_constant, TIME_CONSTANTS)
-    #     self.write("OFLT%d" % time_constant)
-    #     time.sleep(self.POLLING_DELAY)
 
     time_constant = Instrument.control(
         "OFLT?", "OFLT%d",

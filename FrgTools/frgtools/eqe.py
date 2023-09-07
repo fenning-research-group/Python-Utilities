@@ -6,8 +6,8 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pymeasure.instruments.srs import SR830
-%matplotlib
+from frgtools.sr830 import SR830
+# %matplotlib
 
 class EQE:
     """
@@ -19,7 +19,8 @@ class EQE:
         self.set_wls()
         self.lightsource_correction()
         self.data = {}
-        self.lia.time_constant = 0.3    #shorter time-constants could be used, but 300ms gives great data
+        self.time_constant = self.lia.time_constant
+        self.sensitivity  = self.lia.sensitivity
         print('Ready to take EQE.')
         self.m.wavelength = 532         # make the light visible to align sample
 
@@ -71,8 +72,8 @@ class EQE:
         input('Please ensure chopper wheel is turned on and beam is unobstructed. \nPress Enter when done \n')
         input('Eliminate stray light in room. \nPress Enter to begin the lightsource correction \n')
 
-        N_AVG = 20     # number of times to query the photodiode
-        self.pm.sense.average.count = 200    # number of times the photodiode interally averages readings per external query
+        N_AVG = 10     # number of times to query the photodiode
+        self.pm.sense.average.count = 100    # number of times the photodiode interally averages readings per external query
                                              # each reading is approx. 3ms, so 200 readings ~600ms
 
         pm_power = []
@@ -84,7 +85,7 @@ class EQE:
         for wl in tqdm(self.wls, desc = 'Measuring lamp power'):
             self.m.wavelength = wl
             self.pm.sense.correction.wavelength = wl
-            sleep(0.1)
+            sleep(0.05)
             temp = []
             for i in range(N_AVG):
                 temp.append(self.pm.read)
@@ -104,9 +105,9 @@ class EQE:
         
         self.source_correction = df
 
-        df.to_csv(sample_name, index = False)
+        df.to_csv((sample_name), index = False)
 
-    def take_EQE(self, sample_name):
+    def take_EQE(self, sample_name, n_avg, time_constant):
 
         """
         The function that talks to everything and takes EQE
@@ -117,21 +118,29 @@ class EQE:
         lia_voltages = []
         lia_voltage_stds = []
 
-        for _ in range(5):
-            waste = self.lia.time_constant
-
-        tc = self.lia.time_constant
-
         for wl in tqdm(self.wls, desc = 'Taking EQE'):
             temp_lia = []
             self.m.wavelength = wl     # change the wavelength on the mono
 
-            sleep(15*tc) # let the lockin...uh...lock in.
-            for _ in range(5):
-                waste = self.lia.magnitude
+            self.lia.time_constant = time_constant
+            sleep(15*time_constant)
+
+            self.lia.quick_range()
+            sleep(15*time_constant)
+
+            if self.lia.sensitivity == 2e-9:
+                print('QuickRange failed, trying again...')
+                self.lia.quick_range()
+
+                if self.lia.sensitivity != 2e-9:
+                    print('Sensitivity is now: ', self.lia.sensitivity)
+                else:
+                    print('QuickRange failed a second time, setting sensitivity to 1V')
+                    self.lia.sensitivity = 1
+
             for i in range(N_AVERAGES):   #average over 20 queries
-                temp_lia.append(self.lia.magnitude)
-                sleep(tc)  # put one tc between the queries. this is an attempt to avoid sampling faster than the output updates
+                temp_lia.append(self.lia.get_magnitude())
+                sleep(time_constant)  # put one tc between the queries. this is an attempt to avoid sampling faster than the output updates
 
             lia_voltages.append(np.mean(temp_lia))
             lia_voltage_stds.append(np.std(temp_lia))
@@ -152,7 +161,7 @@ class EQE:
             }
         )
 
-        df.to_csv(sample_name, index = False)
+        df.to_csv((sample_name+'.csv'), index = False)
 
         plt.figure(figsize=(4, 3), dpi=360)
         plt.plot(1239.84193 / energies, qe*100, label="EQE", linewidth=0.7, color="black")
