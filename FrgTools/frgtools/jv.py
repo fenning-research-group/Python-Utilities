@@ -914,16 +914,47 @@ import seaborn as sns
 import pandas as pd
 from natsort import natsorted
 
-def boxplot_jv(data, xvar=None, box_kwargs={}, strip_kwargs={}, subplot_kwargs={}, **lims):
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import seaborn as sns
+import pandas as pd
+import natsort
+
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import seaborn as sns
+import pandas as pd
+import natsort
+
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import seaborn as sns
+import pandas as pd
+import natsort
+
+def boxplot_jv(data, xvar=None, custom_order=None, box_kwargs={}, strip_kwargs={}, subplot_kwargs={}, grid=True, vert_lines=True, view='full', layout='box', **lims):
     data["all"] = "all"
     if xvar is None:
         xvar = "all"
 
-    # Sort columns if xvar is not 'all'
-    if xvar != "all":
+    # Sort columns if xvar is not 'all' and custom_order is None
+    if xvar != "all" and custom_order is None:
         data[xvar] = pd.Categorical(data[xvar], categories=natsorted(data[xvar].unique()), ordered=True)
+    elif custom_order is not None:
+        data[xvar] = pd.Categorical(data[xvar], categories=custom_order, ordered=True)
 
-    horiz, vert = 4, 2
+    y_var_list_full = ["pce", "rch", "ff", "rsh", "voc", "rs", "jsc", "i_factor"]
+    y_var_list_simple = ["pce", "ff", "voc", "jsc"]
+    y_var_list = y_var_list_simple if view == 'simple' else y_var_list_full
+
+    if view == 'simple':
+        if layout == 'flat':
+            horiz, vert = 4, 1
+        else:  # Default to 'box' layout
+            horiz, vert = 2, 2
+    else:
+        horiz, vert = len(y_var_list) // 2, 2
+
     embiggen = subplot_kwargs.get("embiggen", 3)
     
     fig, ax = plt.subplots(
@@ -933,46 +964,57 @@ def boxplot_jv(data, xvar=None, box_kwargs={}, strip_kwargs={}, subplot_kwargs={
         constrained_layout=True,
     )
 
-    y_var_list = ["pce", "rch", "ff", "rsh", "voc", "rs", "jsc", "i_factor"]
-    q = 0
+    ax_flat = ax.flatten()  # Flatten ax to handle both layouts correctly
 
-    for k in range(horiz):
-        for n in range(vert):
-            y_var = y_var_list[q]
-            ylim_key = f"{y_var}_lim"
-            xlabel_size = subplot_kwargs.get('xlabel_size', None)
-            xlabel_rotation = subplot_kwargs.get('xlabel_rotation', None)
+    for q, ax in enumerate(ax_flat[:len(y_var_list)]):  # Loop through the flattened ax
+        y_var = y_var_list[q]
+        ylim_key = f"{y_var}_lim"
+        xlabel_size = subplot_kwargs.get('xlabel_size', None)
+        xlabel_rotation = subplot_kwargs.get('xlabel_rotation', None)
 
-            if xlabel_size or xlabel_rotation:
-                for label in ax[n, k].get_xticklabels():
-                    if xlabel_size:
-                        label.set_size(xlabel_size)
-                    if xlabel_rotation:
-                        label.set_rotation(xlabel_rotation)
-            sns.boxplot(
-                x=xvar,
-                y=y_var,
-                data=data,
-                hue=data["direction"],
-                showfliers=False,
-                ax=ax[n, k],
-                **box_kwargs
-            )
-            ax[n, k].get_legend().remove()
+        if xlabel_size or xlabel_rotation:
+            for label in ax.get_xticklabels():
+                if xlabel_size:
+                    label.set_size(xlabel_size)
+                if xlabel_rotation:
+                    label.set_rotation(xlabel_rotation)
+        sns.boxplot(
+            x=xvar,
+            y=y_var,
+            data=data,
+            hue=data["direction"],
+            showfliers=False,
+            ax=ax,
+            order=custom_order,
+            **box_kwargs
+        )
+        ax.get_legend().remove()
 
-            sns.stripplot(
-                x=xvar,
-                y=y_var,
-                data=data,
-                hue=data["direction"],
-                ax=ax[n, k],
-                dodge=True,
-                **strip_kwargs
-            )
-            ax[n, k].get_legend().remove()
+        sns.stripplot(
+            x=xvar,
+            y=y_var,
+            data=data,
+            hue=data["direction"],
+            ax=ax,
+            dodge=True,
+            order=custom_order,
+            **strip_kwargs
+        )
+        ax.get_legend().remove()
 
-            if ylim_key in lims:
-                ax[n, k].set(ylim=(lims[ylim_key][0], lims[ylim_key][1]))
+        if ylim_key in lims:
+            ax.set(ylim=(lims[ylim_key][0], lims[ylim_key][1]))
 
-            q += 1
+        if grid:
+            ax.grid(which='both', axis='y', alpha=0.2)
+            ax.yaxis.set_minor_locator(ticker.AutoMinorLocator(n=5)) 
+
+        if vert_lines:
+            medians = data.groupby(xvar)[y_var].median().loc[custom_order if custom_order else data[xvar].cat.categories]
+            for x, median in enumerate(medians):
+                ymin_val = ax.get_ylim()[0]  # Get the minimum y-value of the current axis
+                ax.vlines(x=x, ymin=ymin_val, ymax=median, color='grey', alpha=0.2, linestyle='--')
+
     plt.show()
+
+
